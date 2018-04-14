@@ -34,6 +34,14 @@ Geometry::Geometry(const VertexData& vertexData, const IndexData& indices)
 	_elementCount = indices.size();
 }
 
+jkps::gl::Geometry::~Geometry()
+{
+	glDeleteVertexArrays(1, &_vao);
+
+	glDeleteBuffers(_vbos.size(), _vbos.data());
+	glDeleteBuffers(1, &_ibo);
+}
+
 void Geometry::bind()
 {
 	glBindVertexArray(_vao);

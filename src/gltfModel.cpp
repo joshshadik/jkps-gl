@@ -30,33 +30,35 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
 	for (const auto& mesh : _model->meshes)
 	{
-		//for (const auto& primitive : mesh.primitives)
+		auto geoPrimitives = std::vector<std::shared_ptr<Geometry>>();
+		for (const auto& primitive : mesh.primitives)
 		{
-			// todo : more than 1 primitive
-			const auto& primitive = mesh.primitives[0];
-
 			Geometry::VertexData vBuffers;
 			Geometry::IndexData iBuffer;
 
 			for (const auto& attribute : primitive.attributes)
 			{
-				const tinygltf::Accessor& accessor = _model->accessors[attribute.second];
-				const tinygltf::BufferView& bufferView = _model->bufferViews[accessor.bufferView];
-				const tinygltf::Buffer& buffer = _model->buffers[bufferView.buffer];
+				GLuint attrLoc;
+				if ( Shader::getStandardAttribute(attribute.first, attrLoc) )
+				{
+					const tinygltf::Accessor& accessor = _model->accessors[attribute.second];
+					const tinygltf::BufferView& bufferView = _model->bufferViews[accessor.bufferView];
+					const tinygltf::Buffer& buffer = _model->buffers[bufferView.buffer];
 
-				uint32_t elementSize = tinygltf::GetTypeSizeInBytes(accessor.type);
-				std::vector<float> vData;
+					uint32_t elementSize = tinygltf::GetTypeSizeInBytes(accessor.type);
+					std::vector<float> vData;
 
-				//memcpy(vData.data(), buffer.data.data() + bufferView.byteOffset + accessor.byteOffset, accessor.count * elementSize * sizeof(float));
+					std::copy_n(reinterpret_cast<const float*>(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset), accessor.count * elementSize, std::back_inserter(vData));
 
-				std::copy_n(reinterpret_cast<const float*>(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset), accessor.count * elementSize, std::back_inserter(vData));
+					VertexLayout layout(
+					{ VertexLayout::VertexAttribute(attrLoc, elementSize, 0) },
+						elementSize * sizeof(float)
+					);
 
-				VertexLayout layout(
-					{ VertexLayout::VertexAttribute(Shader::StandardAttrLocations[attribute.first], elementSize, 0) },
-					elementSize * sizeof(float)
-				);
+					vBuffers.push_back(std::make_pair(vData, layout));
+				}
 
-				vBuffers.push_back(std::make_pair( vData, layout));
+
 			}
 
 			const tinygltf::Accessor& idxAccessor = _model->accessors[primitive.indices];
@@ -78,13 +80,12 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 			}
 
 			auto geo = std::make_shared<Geometry>(vBuffers, iBuffer);
-			_geometries.push_back(geo);
+			geoPrimitives.push_back(geo);
 
-			auto m = std::make_shared<Mesh>(geo, mat);
-			_meshes.push_back(m);
 		}
 
-
+		auto m = std::make_shared<Mesh>(geoPrimitives, mat);
+		_meshes.push_back(m);
 	}
 
 	const auto& scene = _model->scenes[_model->defaultScene];
@@ -134,7 +135,7 @@ void jkps::gl::GLTFModel::render(std::shared_ptr<MaterialUniformBlock> ubo, cons
 	const auto& scene = _model->scenes[_model->defaultScene];
 	for (auto id : scene.nodes)
 	{
-		renderTreeFromNode(id, glm::mat4(), ubo, modelOffset);
+		renderTreeFromNode(id, _matrix, ubo, modelOffset);
 	}
 }
 
@@ -159,13 +160,13 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
 		std::copy_n(node.matrix.data(), 16, reinterpret_cast<float*>(&mtx));
 	}
 
-	mtx = parentMtx; // *mtx;
+	mtx = parentMtx * mtx;
 
 	if (node.mesh >= 0)
 	{
-		//ubo->setValue(&mtx, modelOffset, sizeof(mtx));
-		//ubo->uploadData();
-		//ubo->bind(0);
+		ubo->setValue(&mtx, modelOffset, sizeof(mtx));
+		ubo->uploadData();
+		ubo->bind(0);
 		_meshes[node.mesh]->render();
 	}
 

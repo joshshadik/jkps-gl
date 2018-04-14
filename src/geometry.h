@@ -43,6 +43,7 @@ namespace jkps
 			typedef std::vector<uint32_t> IndexData;
 
 			Geometry(const VertexData& vertexData, const IndexData& indices);
+			~Geometry();
 
 			void bind();
 

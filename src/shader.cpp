@@ -15,6 +15,17 @@ std::map<std::string, GLuint> jkps::gl::Shader::StandardAttrLocations = {
 	{"NORMAL", 2}
 };
 
+bool jkps::gl::Shader::getStandardAttribute(const std::string & key, GLuint & outValue)
+{
+	auto v = StandardAttrLocations.find(key);
+	if ( v != StandardAttrLocations.end())
+	{
+		outValue = (*v).second;
+		return true;
+	}
+	return false;
+}
+
 Shader::Shader(const std::string & source, Type type)
 {
 	_shaderID = glCreateShader(typeToNative(type));
@@ -40,9 +51,19 @@ Shader::Shader(const std::string & source, Type type)
 	}
 }
 
+jkps::gl::Shader::~Shader()
+{
+	glDeleteShader(_shaderID);
+}
+
 void Shader::attach(GLuint program)
 {
 	glAttachShader(program, _shaderID);
+}
+
+void jkps::gl::Shader::detach(GLuint program)
+{
+	glDetachShader(program, _shaderID);
 }
 
 std::shared_ptr<Shader> Shader::loadFromFile(const std::string & filePath, Type type)
@@ -69,10 +90,11 @@ GLenum Shader::typeToNative(Type type)
 	return -1;
 }
 
-ShaderProgram::ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shaders)
+jkps::gl::ShaderProgram::ShaderProgram(std::vector<std::shared_ptr<Shader>> shaders)
+	: _shaders(shaders)
 {
 	_programID = glCreateProgram();
-	for (auto& s : shaders)
+	for (auto s : _shaders)
 	{
 		s->attach(_programID);
 	}
@@ -87,12 +109,20 @@ ShaderProgram::ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shad
 	{
 		printf("Error linking program %d!\n", _programID);
 	}
-
 }
 
+
 ShaderProgram::ShaderProgram(std::shared_ptr<Shader> vs, std::shared_ptr<Shader> fs)
-	: ShaderProgram({ vs, fs })
+	: ShaderProgram(std::vector<std::shared_ptr<Shader>>{ vs, fs })
 {
+}
+
+jkps::gl::ShaderProgram::~ShaderProgram()
+{
+	for (auto shader : _shaders)
+	{
+		shader->detach(_programID);
+	}
 }
 
 void ShaderProgram::bind()

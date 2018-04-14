@@ -4,17 +4,25 @@
 
 using namespace jkps::gl;
 
-Mesh::Mesh(std::shared_ptr<Geometry> geometry, std::shared_ptr<Material> material) 
-	: _geometry(geometry)
+jkps::gl::Mesh::Mesh(std::shared_ptr<Geometry> geometry, std::shared_ptr<Material> material)
+	: Mesh(std::vector<std::shared_ptr<Geometry>>{ geometry }, material)
+{
+}
+
+jkps::gl::Mesh::Mesh(std::vector<std::shared_ptr<Geometry>> geometries, std::shared_ptr<Material> material)
+	: _geometries(geometries)
 	, _material(material)
 {
 }
 
-void Mesh::render()
+void jkps::gl::Mesh::render()
 {
 	_material->bind();
 
-	_geometry->bind();
-	_geometry->render();
+	for (auto geo : _geometries)
+	{
+		geo->bind();
+		geo->render();
+	}
 }
 
