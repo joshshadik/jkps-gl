@@ -2,6 +2,7 @@
 
 #include "material.h"
 #include "mesh.h"
+#include "gltfModel.h"
 
 #include <GL/glew.h>
 #include <GL/GL.h>
@@ -37,6 +38,8 @@ private:
 	std::shared_ptr<Geometry> box;
 
 	std::shared_ptr<Mesh> boxMesh;
+
+	std::shared_ptr<GLTFModel> _gltfModel;
 
 	GlobalUniforms _gUniforms;
 	std::shared_ptr<MaterialUniformBlock> _globalUniformBlock;

@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <map>
 
 namespace jkps 
 {
@@ -13,6 +14,9 @@ namespace jkps
 
 		class Shader
 		{
+		public:
+			static std::map<std::string, GLuint> StandardAttrLocations;
+
 		public:
 			enum Type
 			{

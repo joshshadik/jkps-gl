@@ -17,7 +17,7 @@ namespace jkps
 
 			void bind();
 
-			static std::shared_ptr<Texture> loadJPEG(uint8_t const *data, size_t size);
+			//static std::shared_ptr<Texture> loadJPEG(uint8_t const *data, size_t size);
 
 		private:
 			GLuint _textureID;

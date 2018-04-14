@@ -1,8 +1,5 @@
 #pragma once
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tiny_gltf.h"
+
 
 #include "mesh.h"
 #include "texture.h"
@@ -11,6 +8,12 @@
 #include <memory>
 #include <string>
 
+namespace tinygltf
+{
+	class Model;
+	class Node;
+}
+
 namespace jkps
 {
 	namespace gl
@@ -18,11 +21,20 @@ namespace jkps
 		class GLTFModel
 		{
 		public:
-			GLTFModel(const tinygltf::Model& model);
+			GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<ShaderProgram> overrideShader);
 
-			static std::shared_ptr<GLTFModel> loadFromFile(const std::string&& filename);
+			static std::shared_ptr<GLTFModel> loadFromFile(const std::string&& filename, std::shared_ptr<ShaderProgram> overrideShader);
+
+			void render( std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset);
 
 		private:
+			void importNode(const tinygltf::Node& node);
+
+			void renderTreeFromNode(int nId, const glm::mat4& parentMtx, std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset);
+
+		private:
+
+			std::unique_ptr<tinygltf::Model> _model;
 
 			std::vector<std::shared_ptr<Mesh>> _meshes;
 			std::vector<std::shared_ptr<Geometry>> _geometries;

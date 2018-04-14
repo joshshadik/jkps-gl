@@ -24,11 +24,12 @@ namespace jkps
 			void uploadData();
 			void bind(int index);
 
+			void setValue(void* data, size_t offset, size_t size);
 
 		private:
 			GLuint _ubo;
 
-			const void* _buffer;
+			void* _buffer;
 			const size_t _size;
 		};
 

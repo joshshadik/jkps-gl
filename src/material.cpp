@@ -3,7 +3,7 @@
 using namespace jkps::gl;
 
 MaterialUniformBlock::MaterialUniformBlock(const void* buffer, const size_t size)
-	: _buffer(buffer)
+	: _buffer(const_cast<void*>(buffer))
 	, _size(size)
 {
 	glGenBuffers(1, &_ubo);
@@ -22,6 +22,11 @@ void MaterialUniformBlock::uploadData()
 void MaterialUniformBlock::bind(int index)
 {
 	glBindBufferBase(GL_UNIFORM_BUFFER, index, _ubo);
+}
+
+void jkps::gl::MaterialUniformBlock::setValue(void * data, size_t byteOffset, size_t size)
+{
+	memcpy(reinterpret_cast<unsigned char*>(_buffer) + byteOffset, data, size);
 }
 
 Material::Material(std::shared_ptr<ShaderProgram> program)

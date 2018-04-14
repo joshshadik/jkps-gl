@@ -39,51 +39,35 @@ source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "headers" FILES ${SAMPLE_HEADE
 
 
 
-
-# set(THIRDPARTY_DIR "${SOURCE_PATH}/thirdparty")
-
-add_library(glm INTERFACE)
-set_property(TARGET glm PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/glm/include")
+find_package(sdl2 REQUIRED)
+find_package(glew REQUIRED)
+find_package(glm REQUIRED)
 
 add_library(tinygltf INTERFACE)
 set_property(TARGET tinygltf PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/tinygltf/include")
 
-add_library(glew STATIC IMPORTED)
-set_property(TARGET glew PROPERTY IMPORTED_LOCATION "${SOURCE_PATH}/thirdparty/glew/lib/glew32.lib")
 
-add_library(libjpeg-turbo STATIC IMPORTED)
-set_property(TARGET libjpeg-turbo PROPERTY IMPORTED_LOCATION "${SOURCE_PATH}/thirdparty/libjpeg-turbo/lib/turbojpeg.lib")
-
-
-add_library(sdl2 STATIC IMPORTED)
-set_property(TARGET sdl2 PROPERTY IMPORTED_LOCATION "${SOURCE_PATH}/thirdparty/sdl2/lib/SDL2.lib")
-
-add_library(sdl2-main STATIC IMPORTED)
-set_property(TARGET sdl2-main PROPERTY IMPORTED_LOCATION "${SOURCE_PATH}/thirdparty/sdl2/lib/SDL2main.lib")
-
-include_directories("${SOURCE_PATH}/thirdparty/glew/include")
-include_directories("${SOURCE_PATH}/thirdparty/libjpeg-turbo/include")
-include_directories("${SOURCE_PATH}/thirdparty/sdl2/include")
-
-target_link_libraries( jkps-gl
+target_link_libraries(jkps-gl PUBLIC 
+GLEW::GLEW
 glm
 tinygltf
-glew
-libjpeg-turbo
-glu32.lib
-opengl32.lib
 )
 
-target_include_directories(jkps-sample PUBLIC "${SOURCE_PATH}/src/")
+target_link_libraries(jkps-gl PUBLIC
+glu32
+opengl32
+)
+
+target_include_directories(jkps-sample PUBLIC 
+"${SOURCE_PATH}/src/"
+
+)
 target_link_libraries(jkps-sample
 jkps-gl
-sdl2
-sdl2-main
-glm
-tinygltf
-glew
-libjpeg-turbo
-glu32.lib
-opengl32.lib
+SDL2::SDL2 
+SDL2::SDL2main
+GLEW::GLEW
+glu32
+opengl32
 )
 
