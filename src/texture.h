@@ -6,23 +6,23 @@
 #include <memory>
 #include <vector>
 
-namespace jkps 
+namespace jkps
 {
-	namespace gl 
-	{
-		class Texture
-		{
-		public:
-			Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint format, GLuint layout);
+    namespace gl
+    {
+        class Texture
+        {
+        public:
+            Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint format, GLuint layout);
 
-			void bind();
+            void bind();
 
-			//static std::shared_ptr<Texture> loadJPEG(uint8_t const *data, size_t size);
+            //static std::shared_ptr<Texture> loadJPEG(uint8_t const *data, size_t size);
 
-		private:
-			GLuint _textureID;
+        private:
+            GLuint _textureID;
 
-		};
+        };
 
-	}
+    }
 }

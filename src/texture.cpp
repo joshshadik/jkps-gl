@@ -9,22 +9,22 @@ using namespace jkps::gl;
 
 Texture::Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint format, GLuint layout)
 {
-	glGenTextures(1, &_textureID);
-	bind();
+    glGenTextures(1, &_textureID);
+    bind();
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, GL_UNSIGNED_BYTE, data.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, GL_UNSIGNED_BYTE, data.data());
 
 }
 
 void Texture::bind()
 {
-	glBindTexture(GL_TEXTURE_2D, _textureID);
+    glBindTexture(GL_TEXTURE_2D, _textureID);
 }
 //
 //std::shared_ptr<Texture> Texture::loadJPEG(uint8_t const *data, size_t size) {

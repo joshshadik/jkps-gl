@@ -2,8 +2,8 @@
 
 namespace jkps
 {
-	namespace gl
-	{
+    namespace gl
+    {
 
-	}
+    }
 }
