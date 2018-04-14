@@ -13,6 +13,7 @@ jkps::gl::Mesh::Mesh(std::vector<std::shared_ptr<Geometry>> geometries, std::sha
     : _geometries(geometries)
     , _material(material)
 {
+    _modelUniformLocation = _material->getUniformLocation("model");
 }
 
 void jkps::gl::Mesh::render()
@@ -26,5 +27,12 @@ void jkps::gl::Mesh::render()
     }
 
     _material->unbind();
+}
+
+void jkps::gl::Mesh::render(const glm::mat4 & mtx)
+{
+    _material->setUniform(_modelUniformLocation, mtx);
+
+    render();
 }
 

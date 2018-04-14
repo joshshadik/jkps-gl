@@ -38,10 +38,10 @@ void App::init()
     Geometry::VertexData vertexData = { std::make_pair(quadVertices, vertLayout), std::make_pair(quadTexcoords, texcoordLayout) };
     box = std::make_shared<Geometry>(vertexData, quadVertexIndices);
 
-    _gUniforms._model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    _gUniforms._view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.7f, -3.0f));
+    //_gUniforms._model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    _gUniforms._view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.55f, -0.15f));
     _gUniforms._projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
-    _gUniforms._color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    //_gUniforms._color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     _globalUniformBlock = std::make_shared<MaterialUniformBlock>(&_gUniforms, sizeof(GlobalUniforms));
 
     _globalUniformBlock->bind(0);
@@ -56,9 +56,9 @@ void App::init()
     boxMesh = std::make_shared<Mesh>(box, material);
 
 
-    _gltfModel = GLTFModel::loadFromFile("./resources/models/Duck/Duck.gltf", program);
+    _gltfModel = GLTFModel::loadFromFile("./resources/models/fat/fat-character.gltf", program);
 
-    //_gltfModel->setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
+    _gltfModel->setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -84,7 +84,7 @@ void App::render()
 
     //boxMesh->render();
 
-    _gltfModel->render(_globalUniformBlock, 0);
+    _gltfModel->render();
 
 #ifdef _DEBUG
     GLenum er = glGetError();

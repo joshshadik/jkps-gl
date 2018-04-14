@@ -21,37 +21,58 @@ static std::string GetFilePathExtension(const std::string &FileName) {
     return "";
 }
 
+int getTextureIndex(const tinygltf::Material& material, const std::string& valueName, const std::string& pbrName)
+{
+    int texIndex = -1;
+    auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
+
+    auto diffuseIt = material.values.find(valueName);
+    if (diffuseIt != material.values.end())
+    {
+        texIndex = diffuseIt->second.TextureIndex();
+    }
+    else
+    {
+        if (pbrExt != material.extensions.end())
+        {
+            auto diffObj = pbrExt->second.Get(pbrName);
+            if (diffObj.Type() && diffObj.IsObject())
+            {
+                texIndex = diffObj.Get("index").Get<int>();
+            }
+        }
+    }
+
+    return texIndex;
+}
+
 GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<ShaderProgram> overrideShader)
     : _model(std::move(model))
 {
     for (const auto& image : _model->images)
     {
-        auto texture = std::make_shared<Texture>(image.image, glm::ivec2(image.width, image.height), GL_RGB8, GL_RGB);
+        GLuint format, layout;
+        switch (image.component)
+        {
+        case 3:
+            format = GL_RGB8;
+            layout = GL_RGB;
+            break;
+
+        case 4:
+            format = GL_RGBA8;
+            layout = GL_RGBA;
+            break;
+        }
+        auto texture = std::make_shared<Texture>(image.image, glm::ivec2(image.width, image.height), format, layout);
         _textures.push_back(texture);
     }
 
     for (const auto& material : _model->materials)
     {
         auto mat = std::make_shared<Material>(overrideShader);
-        int texIndex = -1;
-        auto diffuseIt = material.values.find("baseColorTexture");
-        if (diffuseIt != material.values.end())
-        {
-            texIndex = diffuseIt->second.TextureIndex();
-        }
-        else
-        {
-            auto extIt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
-            if (extIt != material.extensions.end())
-            {
-                auto diffObj = extIt->second.Get("diffuseTexture");
-                if (diffObj.Type() && diffObj.IsObject())
-                {
-                    texIndex = diffObj.Get("index").Get<int>();
-                    
-                }
-            }
-        }
+
+        int texIndex = getTextureIndex(material, "baseColorTexture", "diffuseTexture");
         if (texIndex >= 0)
         {
             auto loc = mat->getUniformLocation("uDiffuse");
@@ -91,8 +112,6 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
                     vBuffers.push_back(std::make_pair(vData, layout));
                 }
-
-
             }
 
             const auto& idxAccessor = _model->accessors[primitive.indices];
@@ -121,8 +140,6 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
     
         _meshGroups.push_back(meshGroup);
     }
-
-
 
     const auto& scene = _model->scenes[_model->defaultScene];
 
@@ -166,12 +183,12 @@ std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename
     return std::make_shared<GLTFModel>(std::move(model), overrideShader);
 }
 
-void jkps::gl::GLTFModel::render(std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset)
+void jkps::gl::GLTFModel::render()
 {
     const auto& scene = _model->scenes[_model->defaultScene];
     for (auto id : scene.nodes)
     {
-        renderTreeFromNode(id, _matrix, ubo, modelOffset);
+        renderTreeFromNode(id, _matrix);
     }
 }
 
@@ -185,7 +202,7 @@ void jkps::gl::GLTFModel::importNode(const tinygltf::Node & node)
     }
 }
 
-void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx, std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset)
+void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx)
 {
     const auto& node = _model->nodes[nId];
 
@@ -200,16 +217,14 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
 
     if (node.mesh >= 0)
     {
-        ubo->setValue(&mtx, modelOffset, sizeof(mtx));
-        ubo->uploadData();
         for (auto mesh : _meshGroups[node.mesh])
         {
-            mesh->render();
+            mesh->render(mtx);
         }
     }
 
     for (const auto id : node.children)
     {
-        renderTreeFromNode(id, mtx, ubo, modelOffset);
+        renderTreeFromNode(id, mtx);
     }
 }

@@ -14,10 +14,8 @@ using namespace jkps::gl;
 
 struct GlobalUniforms
 {
-    glm::mat4 _model;
     glm::mat4 _view;
     glm::mat4 _projection;
-    glm::vec4 _color;
 };
 
 

@@ -25,13 +25,13 @@ namespace jkps
 
             static std::shared_ptr<GLTFModel> loadFromFile(const std::string&& filename, std::shared_ptr<ShaderProgram> overrideShader);
 
-            void render(std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset);
+            void render();
             void setMatrix(const glm::mat4& mtx) { _matrix = mtx; }
 
         private:
             void importNode(const tinygltf::Node& node);
 
-            void renderTreeFromNode(int nId, const glm::mat4& parentMtx, std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset);
+            void renderTreeFromNode(int nId, const glm::mat4& parentMtx );
 
         private:
             typedef std::vector<std::shared_ptr<Mesh>> MeshGroup;

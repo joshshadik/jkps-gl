@@ -16,10 +16,13 @@ namespace jkps
             Mesh(std::vector<std::shared_ptr<Geometry>> geometries, std::shared_ptr<Material> material);
 
             void render();
+            void render(const glm::mat4& mtx);
 
         private:
             std::vector<std::shared_ptr<Geometry>> _geometries;
             std::shared_ptr<Material> _material;
+
+            GLint _modelUniformLocation;
         };
 
     }
