@@ -56,9 +56,9 @@ void App::init()
     boxMesh = std::make_shared<Mesh>(box, material);
 
 
-    _gltfModel = GLTFModel::loadFromFile("./resources/models/fat/fat-character.gltf", program);
+    _gltfModel = GLTFModel::loadFromFile("./resources/models/Duck/Duck.gltf", program);
 
-    _gltfModel->setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
+    //_gltfModel->setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);

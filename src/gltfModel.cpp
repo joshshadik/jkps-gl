@@ -24,13 +24,47 @@ static std::string GetFilePathExtension(const std::string &FileName) {
 GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<ShaderProgram> overrideShader)
     : _model(std::move(model))
 {
-    // todo - import materials
-    auto mat = std::make_shared<Material>(overrideShader);
-    _materials.push_back(mat);
+    for (const auto& image : _model->images)
+    {
+        auto texture = std::make_shared<Texture>(image.image, glm::ivec2(image.width, image.height), GL_RGB8, GL_RGB);
+        _textures.push_back(texture);
+    }
+
+    for (const auto& material : _model->materials)
+    {
+        auto mat = std::make_shared<Material>(overrideShader);
+        int texIndex = -1;
+        auto diffuseIt = material.values.find("baseColorTexture");
+        if (diffuseIt != material.values.end())
+        {
+            texIndex = diffuseIt->second.TextureIndex();
+        }
+        else
+        {
+            auto extIt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
+            if (extIt != material.extensions.end())
+            {
+                auto diffObj = extIt->second.Get("diffuseTexture");
+                if (diffObj.Type() && diffObj.IsObject())
+                {
+                    texIndex = diffObj.Get("index").Get<int>();
+                    
+                }
+            }
+        }
+        if (texIndex >= 0)
+        {
+            auto loc = mat->getUniformLocation("uDiffuse");
+            mat->addTexture(loc, _textures[texIndex]);
+        }
+
+        _materials.push_back(mat);
+    }
 
     for (const auto& mesh : _model->meshes)
     {
-        auto geoPrimitives = std::vector<std::shared_ptr<Geometry>>();
+        MeshGroup meshGroup;
+
         for (const auto& primitive : mesh.primitives)
         {
             Geometry::VertexData vBuffers;
@@ -41,9 +75,9 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
                 GLuint attrLoc;
                 if (Shader::getStandardAttribute(attribute.first, attrLoc))
                 {
-                    const tinygltf::Accessor& accessor = _model->accessors[attribute.second];
-                    const tinygltf::BufferView& bufferView = _model->bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer& buffer = _model->buffers[bufferView.buffer];
+                    const auto& accessor = _model->accessors[attribute.second];
+                    const auto& bufferView = _model->bufferViews[accessor.bufferView];
+                    const auto& buffer = _model->buffers[bufferView.buffer];
 
                     uint32_t elementSize = tinygltf::GetTypeSizeInBytes(accessor.type);
                     std::vector<float> vData;
@@ -61,32 +95,34 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
             }
 
-            const tinygltf::Accessor& idxAccessor = _model->accessors[primitive.indices];
-            const tinygltf::BufferView& idxBufferView = _model->bufferViews[idxAccessor.bufferView];
-            const tinygltf::Buffer& idxBuffer = _model->buffers[idxBufferView.buffer];
+            const auto& idxAccessor = _model->accessors[primitive.indices];
+            const auto& idxBufferView = _model->bufferViews[idxAccessor.bufferView];
+            const auto& idxBuffer = _model->buffers[idxBufferView.buffer];
 
-            const unsigned char* start = idxBuffer.data.data() + idxBufferView.byteOffset + idxAccessor.byteOffset;
+            const uint8_t* start = idxBuffer.data.data() + idxBufferView.byteOffset + idxAccessor.byteOffset;
             if (idxAccessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
             {
                 std::copy_n(start, idxAccessor.count, std::back_inserter(iBuffer));
             }
             else if (idxAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
             {
-                std::copy_n(reinterpret_cast<const unsigned short*>(start), idxAccessor.count, std::back_inserter(iBuffer));
+                std::copy_n(reinterpret_cast<const uint16_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
             else if (idxAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
             {
-                std::copy_n(reinterpret_cast<const unsigned int*>(start), idxAccessor.count, std::back_inserter(iBuffer));
+                std::copy_n(reinterpret_cast<const uint32_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
 
             auto geo = std::make_shared<Geometry>(vBuffers, iBuffer);
-            geoPrimitives.push_back(geo);
 
+            auto m = std::make_shared<Mesh>( geo, _materials[primitive.material]);
+            meshGroup.push_back(m);
         }
-
-        auto m = std::make_shared<Mesh>(geoPrimitives, mat);
-        _meshes.push_back(m);
+    
+        _meshGroups.push_back(meshGroup);
     }
+
+
 
     const auto& scene = _model->scenes[_model->defaultScene];
 
@@ -166,8 +202,10 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
     {
         ubo->setValue(&mtx, modelOffset, sizeof(mtx));
         ubo->uploadData();
-        ubo->bind(0);
-        _meshes[node.mesh]->render();
+        for (auto mesh : _meshGroups[node.mesh])
+        {
+            mesh->render();
+        }
     }
 
     for (const auto id : node.children)

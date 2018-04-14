@@ -34,10 +34,13 @@ namespace jkps
             void renderTreeFromNode(int nId, const glm::mat4& parentMtx, std::shared_ptr<MaterialUniformBlock> ubo, const size_t modelOffset);
 
         private:
+            typedef std::vector<std::shared_ptr<Mesh>> MeshGroup;
+
             glm::mat4 _matrix;
             std::unique_ptr<tinygltf::Model> _model;
 
-            std::vector<std::shared_ptr<Mesh>> _meshes;
+           
+            std::vector<MeshGroup> _meshGroups;
             std::vector<std::shared_ptr<Geometry>> _geometries;
             std::vector<std::shared_ptr<Material>> _materials;
             std::vector<std::shared_ptr<Texture>> _textures;

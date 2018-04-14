@@ -26,24 +26,8 @@ void Texture::bind()
 {
     glBindTexture(GL_TEXTURE_2D, _textureID);
 }
-//
-//std::shared_ptr<Texture> Texture::loadJPEG(uint8_t const *data, size_t size) {
-//	auto handle = std::shared_ptr<void>(tjInitDecompress(), [](tjhandle handle) { tjDestroy(handle); });
-//	if (!handle)
-//		return nullptr;
-//
-//	int w, h, subsample, colorspace;
-//	if (tjDecompressHeader3(handle.get(), const_cast<uint8_t *>(data), static_cast<unsigned long>(size), &w, &h, &subsample, &colorspace) != 0)
-//		return nullptr;
-//
-//	auto jpegFormat = TJPF_RGB;
-//	auto stride = w * tjPixelSize[jpegFormat];
-//
-//	std::vector<uint8_t> result;
-//	result.resize(h * stride, 0);
-//	if (tjDecompress2(handle.get(), const_cast<uint8_t *>(data), static_cast<unsigned long>(size), result.data(), w, stride, h, jpegFormat, TJFLAG_BOTTOMUP) != 0)
-//		return nullptr;
-//
-//	auto texture = std::make_shared<Texture>(result, glm::ivec2(w, h), GL_RGB8, GL_RGB);
-//	return texture;
-//}
+
+void Texture::unbind()
+{
+    glBindTexture(GL_TEXTURE_2D, 0);
+}

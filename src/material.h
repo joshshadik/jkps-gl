@@ -43,6 +43,7 @@ namespace jkps
             GLint getUniformLocation(const std::string& name);
 
             void bind();
+            void unbind();
 
         private:
             std::shared_ptr<ShaderProgram> _sp;

@@ -24,5 +24,7 @@ void jkps::gl::Mesh::render()
         geo->bind();
         geo->render();
     }
+
+    _material->unbind();
 }
 
