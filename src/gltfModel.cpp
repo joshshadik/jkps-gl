@@ -21,10 +21,9 @@ static std::string GetFilePathExtension(const std::string &FileName) {
     return "";
 }
 
-int getTextureIndex(const tinygltf::Material& material, const std::string& valueName, const std::string& pbrName)
+int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::const_iterator pbrExt, const std::string& valueName, const std::string& pbrName)
 {
     int texIndex = -1;
-    auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
     auto diffuseIt = material.values.find(valueName);
     if (diffuseIt != material.values.end())
@@ -33,7 +32,12 @@ int getTextureIndex(const tinygltf::Material& material, const std::string& value
     }
     else
     {
-        if (pbrExt != material.extensions.end())
+        auto additionalIt = material.additionalValues.find(valueName);
+        if (additionalIt != material.additionalValues.end())
+        {
+            texIndex = additionalIt->second.TextureIndex();
+        }
+        else if (pbrExt != material.extensions.end())
         {
             auto diffObj = pbrExt->second.Get(pbrName);
             if (diffObj.Type() && diffObj.IsObject())
@@ -71,12 +75,82 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
     for (const auto& material : _model->materials)
     {
         auto mat = std::make_shared<Material>(overrideShader);
+        auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
-        int texIndex = getTextureIndex(material, "baseColorTexture", "diffuseTexture");
-        if (texIndex >= 0)
+        int diffIndex = getTextureIndex(material, pbrExt, "baseColorTexture", "diffuseTexture");
+        auto loc = mat->getUniformLocation("uDiffuse");
+
+        if (diffIndex >= 0)
+        {        
+            mat->addTexture(loc, _textures[diffIndex]);
+        }
+        else
         {
-            auto loc = mat->getUniformLocation("uDiffuse");
-            mat->addTexture(loc, _textures[texIndex]);
+            std::vector<uint8_t> texData;
+            glm::ivec2 size(512, 512);
+            texData.assign(size.x * size.y * 3, 255);
+            auto tex = std::make_shared<Texture>(texData, size, GL_RGB8, GL_RGB);
+            _textures.push_back(tex);
+            mat->addTexture(loc, tex);
+        }
+
+        int normalIndex = getTextureIndex(material, pbrExt, "normalTexture", "normalTexture");
+        auto nLoc = mat->getUniformLocation("uNormalTex");
+
+        if (normalIndex >= 0)
+        {
+            mat->addTexture(nLoc, _textures[normalIndex]);
+        }
+
+
+        int occIndex = getTextureIndex(material, pbrExt, "occlusionTexture", "occlusionTexture");
+        auto oLoc = mat->getUniformLocation("uOcclusionTex");
+
+        if (occIndex >= 0)
+        {
+            mat->addTexture(oLoc, _textures[occIndex]);
+        }
+
+        glm::vec4 diffuseFactorColor{ 1.0f };
+
+        static const std::string diffuseFactorKey = "diffuseFactor";
+
+        MaterialUniformBlock::Descriptor pbrDescriptor{
+            { { diffuseFactorKey, 0 },{ "metallicFactor", sizeof(glm::vec4) },{ "roughnessFactor", sizeof(glm::vec4) + sizeof(float) } },
+            sizeof(glm::vec4) + sizeof(float) * 4
+        };
+
+        auto ubo = std::make_shared<MaterialUniformBlock>(pbrDescriptor);
+
+        if (pbrExt != material.extensions.end())
+        {          
+            auto diffFactor = pbrExt->second.Get(diffuseFactorKey);
+            if (diffFactor.Type())
+            {
+                auto arrValues = diffFactor.Get<tinygltf::Value::Array>();
+
+                for (int i = 0; i < arrValues.size(); ++i)
+                {
+                    diffuseFactorColor[i] = arrValues.at(i).Get<int>();
+                }
+            }
+        }
+
+        ubo->setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
+        ubo->uploadData();
+
+        mat->addUniformBlock(32, ubo);
+
+        auto alphaMode = material.additionalValues.find("alphaMode");
+        if (alphaMode != material.additionalValues.end())
+        {
+            std::string mode = alphaMode->second.string_value;
+
+            if (mode == "BLEND")
+            {
+                mat->setBlended(true);
+                mat->setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
         }
 
         _materials.push_back(mat);

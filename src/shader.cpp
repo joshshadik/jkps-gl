@@ -12,7 +12,8 @@ using namespace jkps::gl;
 std::map<std::string, GLuint> jkps::gl::Shader::StandardAttrLocations = {
     {"POSITION", 0},
     {"TEXCOORD_0", 1},
-    {"NORMAL", 2}
+    {"NORMAL", 2},
+    {"TANGENT", 3}
 };
 
 bool jkps::gl::Shader::getStandardAttribute(const std::string & key, GLuint & outValue)

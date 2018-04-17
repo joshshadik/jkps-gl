@@ -4,20 +4,27 @@
 
 using namespace jkps::gl;
 
-jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const void* buffer, const size_t size)
-    : _buffer(const_cast<void*>(buffer))
-    , _size(size)
+jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor& descriptor)
+    : _descriptor(descriptor)
 {
+    auto variables = _descriptor.first;
+    for (const auto& v : variables)
+    {
+        _offsets[v.first] = v.second;
+    }
+
+    _buffer.resize(_descriptor.second);
+
     glGenBuffers(1, &_ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
-    glBufferData(GL_UNIFORM_BUFFER, _size, _buffer, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, _descriptor.second, _buffer.data(), GL_DYNAMIC_DRAW);
 }
 
 void jkps::gl::MaterialUniformBlock::uploadData()
 {
     glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
     GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    memcpy(p, _buffer, _size);
+    memcpy(p, _buffer.data(), _buffer.size());
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
@@ -26,13 +33,20 @@ void jkps::gl::MaterialUniformBlock::bind(int index)
     glBindBufferBase(GL_UNIFORM_BUFFER, index, _ubo);
 }
 
-void jkps::gl::MaterialUniformBlock::setValue(void * data, size_t byteOffset, size_t size)
+void jkps::gl::MaterialUniformBlock::setValue(const std::string & key, const void * data, const size_t size)
 {
-    memcpy(reinterpret_cast<unsigned char*>(_buffer) + byteOffset, data, size);
+    uint32_t offset = _offsets[key];
+
+    memcpy(_buffer.data() + offset, data, size);
+}
+
+void jkps::gl::MaterialUniformBlock::setValue(const void * data, const size_t byteOffset, const size_t size)
+{
+    memcpy(_buffer.data() + byteOffset, data, size);
 }
 
 jkps::gl::Material::Material(std::shared_ptr<ShaderProgram> program)
-    : _sp(program)
+    : _program(program)
 {
 
 }
@@ -49,7 +63,7 @@ void jkps::gl::Material::addTexture(GLint uniformLocation, std::shared_ptr<Textu
 
 GLint jkps::gl::Material::getUniformLocation(const std::string & name)
 {
-    return _sp->getUniformLocation(name);
+    return _program->getUniformLocation(name);
 }
 
 void jkps::gl::Material::setUniform(GLint location, Uniform value)
@@ -79,7 +93,17 @@ void jkps::gl::Material::setUniform(GLint location, const glm::vec2 & value)
 
 void jkps::gl::Material::bind()
 {
-    _sp->bind();
+    _program->bind();
+
+    if (_blended)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(_blendSrc, _blendDst);
+    }
+    else
+    {
+        glDisable(GL_BLEND);
+    }
 
     for (auto& block : _uniformBlocks)
     {
@@ -152,14 +176,14 @@ void jkps::gl::Uniform::bind(GLint location)
     case Int:
     {
         int v = std::get<int>(_value);
-        glUniform1i(location, &v);
+        glUniform1i(location, v);
     }
     break;
 
     case UInt:
     {
         uint32_t v = std::get<uint32_t>(_value);
-        glUniform1ui(location, &v);
+        glUniform1ui(location, v);
     }
     break;
     }

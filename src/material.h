@@ -17,23 +17,6 @@ namespace jkps
 {
     namespace gl
     {
-        class MaterialUniformBlock
-        {
-        public:
-            MaterialUniformBlock(const void* buffer, const size_t size);
-
-            void uploadData();
-            void bind(int index);
-
-            void setValue(void* data, size_t offset, size_t size);
-
-        private:
-            GLuint _ubo;
-
-            void* _buffer;
-            const size_t _size;
-        };
-
         class Uniform
         {
         public:
@@ -48,10 +31,10 @@ namespace jkps
                 UInt,
             };
 
-            void setValue(Value value, Type type) 
-            { 
-                _value = value; 
-                _type = type; 
+            void setValue(Value value, Type type)
+            {
+                _value = value;
+                _type = type;
             }
 
             void setValue(glm::mat4 value) { setValue(value, Mat4); }
@@ -64,10 +47,34 @@ namespace jkps
 
             void bind(GLint location);
 
-        private:      
+        private:
             Value _value;
             Type _type;
         };
+
+        class MaterialUniformBlock
+        {
+        public:
+            typedef std::pair<std::vector<std::pair<std::string, uint32_t>>, size_t> Descriptor;
+
+        public:
+            MaterialUniformBlock(const Descriptor& descriptor);
+
+            void uploadData();
+            void bind(int index);
+
+            void setValue(const std::string& key, const void* data, const size_t size);
+            void setValue(const void* data, const size_t offset, const size_t size);
+
+        private:
+            GLuint _ubo;
+
+            Descriptor _descriptor;
+            std::vector<uint8_t> _buffer;
+            std::map<std::string, uint32_t> _offsets;
+        };
+
+
 
         class Material
         {
@@ -86,18 +93,20 @@ namespace jkps
             void setUniform(GLint location, const glm::vec3& value);
             void setUniform(GLint location, const glm::vec2& value);
 
+            void setBlended(bool blend) { _blended = blend; }
+            void setBlendFunction(GLenum src, GLenum dst) { _blendSrc = src; _blendDst = dst; }
+
             void bind();
             void unbind();
 
         private:
-            std::shared_ptr<ShaderProgram> _sp;
-            std::vector <std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>>> _uniformBlocks;
-
-            std::vector<std::pair<GLint, glm::mat4>> _matrices;
-            std::vector<std::pair<GLint, glm::vec4>> _vec4Uniforms;
-            std::vector<std::pair<GLint, glm::vec3>> _vec3Uniforms;
-            
+            std::shared_ptr<ShaderProgram> _program;
+            std::vector <std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>>> _uniformBlocks;          
             std::map<GLint, Uniform> _uniforms;
+
+            bool _blended = false;
+            GLenum _blendSrc;
+            GLenum _blendDst;
 
             std::vector<std::pair<GLint, std::shared_ptr<Texture>>> _textures;
         };

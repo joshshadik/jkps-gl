@@ -18,6 +18,13 @@ namespace jkps
 {
     namespace gl
     {
+        struct PbrUniforms
+        {
+            glm::vec4 _baseColorFactor;
+            float _metallicFactor;
+            float _roughnessFactor;
+        };
+
         class GLTFModel
         {
         public:
@@ -38,7 +45,7 @@ namespace jkps
 
             glm::mat4 _matrix;
             std::unique_ptr<tinygltf::Model> _model;
-
+            PbrUniforms _pbr;
            
             std::vector<MeshGroup> _meshGroups;
             std::vector<std::shared_ptr<Geometry>> _geometries;

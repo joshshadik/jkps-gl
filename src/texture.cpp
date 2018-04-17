@@ -20,6 +20,7 @@ Texture::Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint forma
 
     glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, GL_UNSIGNED_BYTE, data.data());
 
+    unbind();
 }
 
 void Texture::bind()
