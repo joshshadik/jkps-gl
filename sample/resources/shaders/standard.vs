@@ -24,6 +24,7 @@ out vec2 vTexcoord;
 out vec3 vNormal;
 out vec3 vTangent;
 out vec3 vBinormal;
+out vec4 vWorldPos;
 
 void main(void)
 {
@@ -32,7 +33,8 @@ void main(void)
 	vTangent = normalize((model * vec4(aTangent.xyz, 0.0)).xyz);
 	vBinormal = cross(vNormal, vTangent) * aTangent.w;
 
-	vec4 pos = projection * view * model * vec4(aPos.xyz, 1.0);
+	vWorldPos = model * vec4(aPos.xyz, 1.0);
+	vec4 pos = projection * view * vWorldPos;
 
     gl_Position = pos; // vec4(vTexcoord * 2.0 - 1.0, 0.0, 1.0);
 }

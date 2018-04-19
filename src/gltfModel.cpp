@@ -82,7 +82,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
         if (diffIndex >= 0)
         {        
-            mat->addTexture(loc, _textures[diffIndex]);
+            mat->setUniform(loc, _textures[diffIndex]);
         }
         else
         {
@@ -91,7 +91,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
             texData.assign(size.x * size.y * 3, 255);
             auto tex = std::make_shared<Texture>(texData, size, GL_RGB8, GL_RGB);
             _textures.push_back(tex);
-            mat->addTexture(loc, tex);
+            mat->setUniform(loc, tex);
         }
 
         int normalIndex = getTextureIndex(material, pbrExt, "normalTexture", "normalTexture");
@@ -99,7 +99,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
         if (normalIndex >= 0)
         {
-            mat->addTexture(nLoc, _textures[normalIndex]);
+            mat->setUniform(nLoc, _textures[normalIndex]);
         }
 
 
@@ -108,15 +108,17 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
         if (occIndex >= 0)
         {
-            mat->addTexture(oLoc, _textures[occIndex]);
+            mat->setUniform(oLoc, _textures[occIndex]);
         }
 
         glm::vec4 diffuseFactorColor{ 1.0f };
 
         static const std::string diffuseFactorKey = "diffuseFactor";
+        static const std::string metallicFactorKey = "metallicFactor";
+        static const std::string roughnessFactorKey = "roughnessFactor";
 
-        MaterialUniformBlock::Descriptor pbrDescriptor{
-            { { diffuseFactorKey, 0 },{ "metallicFactor", sizeof(glm::vec4) },{ "roughnessFactor", sizeof(glm::vec4) + sizeof(float) } },
+        static const MaterialUniformBlock::Descriptor pbrDescriptor {
+            { { diffuseFactorKey, 0 },{ metallicFactorKey, sizeof(glm::vec4) },{ roughnessFactorKey, sizeof(glm::vec4) + sizeof(float) } },
             sizeof(glm::vec4) + sizeof(float) * 4
         };
 

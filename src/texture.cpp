@@ -5,9 +5,10 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+
 using namespace jkps::gl;
 
-Texture::Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint format, GLuint layout)
+Texture::Texture(std::optional<std::vector<uint8_t>> data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType)
 {
     glGenTextures(1, &_textureID);
     bind();
@@ -18,9 +19,15 @@ Texture::Texture(std::vector<uint8_t> data, const glm::ivec2& size, GLuint forma
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, GL_UNSIGNED_BYTE, data.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, dataType, data ? data.value().data() : GL_NONE);
 
     unbind();
+
+}
+
+Texture::~Texture()
+{
+    glDeleteTextures(1, &_textureID);
 }
 
 void Texture::bind()

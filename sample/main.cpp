@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-
-    window = SDL_CreateWindow("jiggles", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 1024, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    glm::ivec2 windowSize = glm::vec2(1024, 768);
+    window = SDL_CreateWindow("Test App", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSize.x, windowSize.y, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     gl_context = SDL_GL_CreateContext(window);
 
@@ -74,12 +74,27 @@ int main(int argc, char *argv[]) {
 
 
     app.init();
+
+    app.resize(windowSize);
     while (!quitting) {
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quitting = true;
+            }
+            
+            if (event.type == SDL_WINDOWEVENT) {
+                switch (event.window.event)
+                {
+                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    
+                    windowSize.x = event.window.data1;
+                    windowSize.y = event.window.data2;
+                    app.resize(windowSize);
+                    break;
+                }
             }
         }
 

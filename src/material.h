@@ -84,14 +84,13 @@ namespace jkps
             Material(std::shared_ptr<ShaderProgram> program);
             void addUniformBlock(uint32_t binding, std::shared_ptr<MaterialUniformBlock> uniformBlock);
 
-            void addTexture(GLint uniformLocation, std::shared_ptr<Texture> tex);
-
             GLint getUniformLocation(const std::string& name);
             void setUniform(GLint location, Uniform value);
             void setUniform(GLint location, const glm::mat4& value);
             void setUniform(GLint location, const glm::vec4& value);
             void setUniform(GLint location, const glm::vec3& value);
             void setUniform(GLint location, const glm::vec2& value);
+            void setUniform(GLint location, std::shared_ptr<Texture> tex);
 
             void setBlended(bool blend) { _blended = blend; }
             void setBlendFunction(GLenum src, GLenum dst) { _blendSrc = src; _blendDst = dst; }
@@ -103,12 +102,13 @@ namespace jkps
             std::shared_ptr<ShaderProgram> _program;
             std::vector <std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>>> _uniformBlocks;          
             std::map<GLint, Uniform> _uniforms;
+            std::map<GLint, std::shared_ptr<Texture>> _textures;
 
             bool _blended = false;
             GLenum _blendSrc;
             GLenum _blendDst;
 
-            std::vector<std::pair<GLint, std::shared_ptr<Texture>>> _textures;
+            //std::vector<std::pair<GLint, std::shared_ptr<Texture>>> _textures;
         };
 
     }

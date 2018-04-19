@@ -2,6 +2,7 @@
 
 #include "material.h"
 #include "mesh.h"
+#include "framebuffer.h"
 #include "gltfModel.h"
 
 #include <GL/glew.h>
@@ -26,6 +27,8 @@ public:
 
     void render();
 
+    void resize(const glm::ivec2& size);
+
 private:
     std::shared_ptr<Shader> vs;
     std::shared_ptr<Shader> fs;
@@ -33,11 +36,18 @@ private:
     std::shared_ptr<ShaderProgram> program;
 
     std::shared_ptr<Material> material;
-    std::shared_ptr<Geometry> box;
+    std::shared_ptr<Geometry> _quadGeo;
 
     std::shared_ptr<Mesh> boxMesh;
 
     std::shared_ptr<GLTFModel> _gltfModel;
+
+    std::shared_ptr<Framebuffer> _screenBuffer;
+
+    std::shared_ptr<Material> _composeMaterial;
+    std::shared_ptr<Mesh> _composeMesh;
+
+    glm::ivec2 _screenSize;
 
     GlobalUniforms _gUniforms;
     std::shared_ptr<MaterialUniformBlock> _globalUniformBlock;

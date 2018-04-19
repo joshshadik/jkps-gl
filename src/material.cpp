@@ -56,10 +56,6 @@ void jkps::gl::Material::addUniformBlock(uint32_t binding, std::shared_ptr<Mater
     _uniformBlocks.push_back(std::make_pair(binding, uniformBlock));
 }
 
-void jkps::gl::Material::addTexture(GLint uniformLocation, std::shared_ptr<Texture> tex)
-{
-    _textures.push_back(std::make_pair(uniformLocation, tex));
-}
 
 GLint jkps::gl::Material::getUniformLocation(const std::string & name)
 {
@@ -89,6 +85,11 @@ void jkps::gl::Material::setUniform(GLint location, const glm::vec3 & value)
 void jkps::gl::Material::setUniform(GLint location, const glm::vec2 & value)
 {
     _uniforms[location].setValue(value, Uniform::Type::Vec2);
+}
+
+void jkps::gl::Material::setUniform(GLint location, std::shared_ptr<Texture> tex)
+{
+    _textures[location] = tex;
 }
 
 void jkps::gl::Material::bind()
