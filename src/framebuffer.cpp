@@ -1,10 +1,12 @@
 #include "framebuffer.h"
 
+#include <memory>
+
 using namespace jkps::gl;
 
 jkps::gl::Framebuffer::Framebuffer()
 {
-    glCreateFramebuffers(1, &_fboId);
+    glGenFramebuffers(1, &_fboId);
 }
 
 void jkps::gl::Framebuffer::setup(const std::vector<std::shared_ptr<Texture>>& color, std::shared_ptr<Texture> depth, const glm::ivec2 & size)

@@ -1,7 +1,5 @@
 #include "geometry.h"
 
-#include <iostream>
-
 using namespace jkps::gl;
 
 Geometry::Geometry(const VertexData& vertexData, const IndexData& indices)
@@ -11,11 +9,11 @@ Geometry::Geometry(const VertexData& vertexData, const IndexData& indices)
     for (int i = 0; i < _vertexData.size(); ++i)
     {
         GLuint vbo;
-        glCreateBuffers(1, &vbo);
+        glGenBuffers(1, &vbo);
         _vbos.push_back(vbo);
     }
 
-    glCreateBuffers(1, &_ibo);
+    glGenBuffers(1, &_ibo);
 
     glGenVertexArrays(1, &_vao);
     glBindVertexArray(_vao);
@@ -52,7 +50,7 @@ void Geometry::render()
     glDrawElements(GL_TRIANGLES, _elementCount, GL_UNSIGNED_INT, NULL);
 }
 
-VertexLayout::VertexLayout(const std::vector<VertexAttribute>& attributes, const uint16_t stride)
+VertexLayout::VertexLayout(const std::vector<VertexAttribute>&& attributes, const uint16_t stride)
     : _attributes(attributes)
     , _stride(stride)
 {

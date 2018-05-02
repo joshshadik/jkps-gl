@@ -1,4 +1,5 @@
-#version 430 core
+#version 300 es
+precision highp float;
 
 // mainly referenced https://github.com/KhronosGroup/glTF-WebGL-PBR/blob/master/shaders/pbr-frag.glsl
 
@@ -8,18 +9,19 @@ in vec3 vTangent;
 in vec3 vBinormal;
 in vec4 vWorldPos;
 
-layout(std140, binding = 0) uniform Common
+uniform Common
 {
 	mat4 view;
 	mat4 projection;
 };
 
-layout(std140, binding = 32) uniform PBR
+uniform PBR
 {
 	vec4 diffuseFactor;
 	float metallicFactor;
 	float roughnessFactor;
 };
+
 
 uniform mat4 model;
 uniform vec4 diffuseColor;
@@ -62,7 +64,7 @@ void main(void) {
 	vec4 occ = texture(uOcclusionTex, vTexcoord.st);
 	// col.rgb = col.rgb * occ.r;
 
-    color = col * occ.r;
+    color = col * 0.5 * ( 1.0 +  occ.r );
 	position = vWorldPos;
 	normal = vec4(n, 1.0);
 	metalRoughOcc = vec4(metallicFactor * occ.g, roughnessFactor * occ.b, occ.r, 1.0);

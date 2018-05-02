@@ -2,11 +2,12 @@
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
 #include "tiny_gltf.h"
 
-#include <iostream>
+
+#include <memory>
 
 using namespace jkps::gl;
 
@@ -111,7 +112,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
             mat->setUniform(oLoc, _textures[occIndex]);
         }
 
-        glm::vec4 diffuseFactorColor{ 1.0f };
+        glm::vec4 diffuseFactorColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
         static const std::string diffuseFactorKey = "diffuseFactor";
         static const std::string metallicFactorKey = "metallicFactor";
@@ -121,6 +122,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
             { { diffuseFactorKey, 0 },{ metallicFactorKey, sizeof(glm::vec4) },{ roughnessFactorKey, sizeof(glm::vec4) + sizeof(float) } },
             sizeof(glm::vec4) + sizeof(float) * 4
         };
+
 
         auto ubo = std::make_shared<MaterialUniformBlock>(pbrDescriptor);
 
@@ -137,11 +139,30 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
                 }
             }
         }
+        else
+        {
+            printf("looking for baseColorFactor \n");
+            auto diffuseIt = material.values.find("baseColorFactor");
+            if (diffuseIt != material.values.end())
+            {
+                printf("found baseColorFactor \n");
+                auto diffFactor = diffuseIt->second.ColorFactor();
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    diffuseFactorColor[i] = diffFactor[i];
+                }
+            }
+        }
+
+        printf("diffuse color factor: %f, %f, %f, %f \n", diffuseFactorColor[0], diffuseFactorColor[1], diffuseFactorColor[2], diffuseFactorColor[3]);
 
         ubo->setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
         ubo->uploadData();
 
-        mat->addUniformBlock(32, ubo);
+        GLint pbrLoc = overrideShader->getUniformBlockLocation("PBR");
+        printf("pbr loc: %d \n", pbrLoc);
+        mat->addUniformBlock(1, pbrLoc, ubo);
 
         auto alphaMode = material.additionalValues.find("alphaMode");
         if (alphaMode != material.additionalValues.end())
@@ -181,10 +202,10 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
                     std::copy_n(reinterpret_cast<const float*>(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset), accessor.count * elementSize, std::back_inserter(vData));
 
-                    VertexLayout layout(
+                    VertexLayout layout{
                     { VertexLayout::VertexAttribute(attrLoc, elementSize, 0) },
-                        elementSize * sizeof(float)
-                    );
+                        (uint16_t)(elementSize * sizeof(float))
+                    };
 
                     vBuffers.push_back(std::make_pair(vData, layout));
                 }
@@ -229,7 +250,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
 std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename, std::shared_ptr<ShaderProgram> overrideShader)
 {
-    auto model = std::make_unique<tinygltf::Model>();
+    auto model = std::unique_ptr<tinygltf::Model>(new tinygltf::Model());
     tinygltf::TinyGLTF gltf_ctx;
 
     std::string err;
@@ -237,12 +258,12 @@ std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename
 
     bool ret = false;
     if (ext.compare("glb") == 0) {
-        std::cout << "Reading binary glTF" << std::endl;
+        printf("Reading binary glTF\n");
         // assume binary glTF.
         ret = gltf_ctx.LoadBinaryFromFile(model.get(), &err, filename.c_str());
     }
     else {
-        std::cout << "Reading ASCII glTF" << std::endl;
+        printf("Reading ASCII glTF\n");
         // assume ascii glTF.
         ret = gltf_ctx.LoadASCIIFromFile(model.get(), &err, filename.c_str());
     }

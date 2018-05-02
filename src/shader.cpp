@@ -1,7 +1,5 @@
 ﻿#include "shader.h"
 
-#include <ios>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -45,7 +43,7 @@ Shader::Shader(const std::string & source, Type type)
         std::vector<GLchar> errorLog(maxLength);
         glGetShaderInfoLog(_shaderID, maxLength, &maxLength, &errorLog[0]);
 
-        std::cout << errorLog.data() << '\n';
+        printf("%s\n", errorLog.data());
 
         glDeleteShader(_shaderID); // Don't leak the shader.
         return;
@@ -69,6 +67,8 @@ void jkps::gl::Shader::detach(GLuint program)
 
 std::shared_ptr<Shader> Shader::loadFromFile(const std::string & filePath, Type type)
 {
+    printf("loading shader from file %s \n", filePath.c_str());
+
     std::ifstream t(filePath);
     std::stringstream buffer;
     buffer << t.rdbuf();
@@ -131,7 +131,17 @@ void ShaderProgram::bind()
     glUseProgram(_programID);
 }
 
+void jkps::gl::ShaderProgram::bindUBO(GLuint location, GLuint binding)
+{
+    glUniformBlockBinding(_programID, location, binding);
+}
+
 GLint ShaderProgram::getUniformLocation(const std::string & name)
 {
     return glGetUniformLocation(_programID, name.c_str());
+}
+
+GLint jkps::gl::ShaderProgram::getUniformBlockLocation(const std::string & name)
+{
+    return glGetUniformBlockIndex(_programID, name.c_str());
 }

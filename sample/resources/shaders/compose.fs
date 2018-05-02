@@ -1,4 +1,5 @@
-#version 430 core
+#version 300 es
+precision highp float;
 
 in vec2 vTexcoord;
 
@@ -9,7 +10,7 @@ uniform sampler2D uMetalRoughOccTex;
 
 uniform vec3 uLightDirection;
 
-out vec4 gl_FragColor;
+out vec4 color;
 
 void main()
 {
@@ -23,5 +24,5 @@ void main()
     col.rgb *= d;
     col.rgb = col.rgb * 0.5 + col.rgb * mro.z;
 
-    gl_FragColor = col;
+    color = col;
 }

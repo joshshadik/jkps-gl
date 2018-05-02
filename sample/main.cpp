@@ -1,113 +1,91 @@
-//SDL2 flashing random color example
-//Should work on iOS/Android/Mac/Windows/Linux
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+#define GLFW_INCLUDE_ES3
+#include <emscripten.h>
+#else
+#include <GL/glew.h>
+#include <GL/GL.h>
+#endif
+
+#include <GLFW/glfw3.h>
 
 #include "app.h"
 
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
-#include <SDL2/SDL_opengl.h>
+GLFWwindow* window;
+App* app;
 
+void main_loop()
+{
+    //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT);
 
-#include <stdlib.h> //rand()
+    app->render();
 
+    /* Swap front and back buffers */
+    glfwSwapBuffers(window);
 
-
-static bool quitting = false;
-static float r = 0.0f;
-static SDL_Window *window = NULL;
-static SDL_GLContext gl_context;
-
-static App app;
-
-void render() {
-
-    SDL_GL_MakeCurrent(window, gl_context);
-
-    app.render();
-
-    SDL_GL_SwapWindow(window);
-
-} //render
-
-
-int SDLCALL watch(void *userdata, SDL_Event* event) {
-
-    if (event->type == SDL_APP_WILLENTERBACKGROUND) {
-        quitting = true;
-    }
-
-    return 1;
+    /* Poll for and process events */
+    glfwPollEvents();
 }
 
-int main(int argc, char *argv[]) {
 
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-        SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
-        return 1;
-    }
+int main(void)
+{
+    //App app;
+    app = new App();
 
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
 
-    glm::ivec2 windowSize = glm::vec2(1024, 768);
-    window = SDL_CreateWindow("Test App", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSize.x, windowSize.y, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef USE_WASM
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#else
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+#endif
 
-    gl_context = SDL_GL_CreateContext(window);
+    glm::ivec2 size = glm::ivec2(1280, 720);
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(size.x, size.y, "Hello World", NULL, NULL);
 
-    int mv;
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &mv);
-
-    //Initialize GLEW
-    glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK)
+    if (!window)
     {
-        printf("Error initializing GLEW! %s\n", glewGetErrorString(glewError));
+        glfwTerminate();
+        return -1;
     }
 
-    SDL_AddEventWatch(watch, NULL);
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+#ifdef USE_WASM
 
+#else
+    glewExperimental = GL_TRUE;
+    glewInit();
+#endif
 
-    app.init();
+    app->init();
+    app->resize(size);
 
-    app.resize(windowSize);
-    while (!quitting) {
+#ifdef USE_WASM
+    emscripten_set_main_loop(main_loop, 0, 1);
+#else
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        //app.render();
 
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                quitting = true;
-            }
-            
-            if (event.type == SDL_WINDOWEVENT) {
-                switch (event.window.event)
-                {
-                case SDL_WINDOWEVENT_RESIZED:
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    
-                    windowSize.x = event.window.data1;
-                    windowSize.y = event.window.data2;
-                    app.resize(windowSize);
-                    break;
-                }
-            }
-        }
-
-        render();
-
-        SDL_Delay(2);
+        main_loop();
     }
 
-    SDL_DelEventWatch(watch, NULL);
-    SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    glfwTerminate();
+#endif
 
-    exit(0);
 
-} //main
+    return 0;
+}

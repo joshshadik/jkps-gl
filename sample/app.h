@@ -5,9 +5,15 @@
 #include "framebuffer.h"
 #include "gltfModel.h"
 
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+
+#include <emscripten.h>
+#else
 #include <GL/glew.h>
 #include <GL/GL.h>
-#include <glm/glm.hpp>
+#endif
 
 #include <memory>
 

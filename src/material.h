@@ -5,13 +5,18 @@
 
 #include <glm/glm.hpp>
 
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+#else
 #include <GL/glew.h>
 #include <GL/GL.h>
+#endif
 
 #include <memory>
 #include <string>
 #include <vector>
-#include <variant>
+//#include <variant>
 
 namespace jkps
 {
@@ -20,7 +25,20 @@ namespace jkps
         class Uniform
         {
         public:
-            typedef std::variant< glm::mat4, glm::vec4, glm::vec3, glm::vec2, float, int, uint32_t> Value;
+            //typedef std::variant< glm::mat4, glm::vec4, glm::vec3, glm::vec2, float, int, uint32_t> Value;
+
+            union Value
+            {
+                Value() {}
+                glm::mat4 m;
+                glm::vec4 v4;
+                glm::vec3 v3;
+                glm::vec2 v2;
+                float f;
+                int i;
+                uint32_t u;
+            };
+
             enum Type {
                 Mat4,
                 Vec4,
@@ -31,19 +49,24 @@ namespace jkps
                 UInt,
             };
 
+            Uniform() {
+                _value.u = 0;
+                _type = UInt;
+            }
+
             void setValue(Value value, Type type)
             {
                 _value = value;
                 _type = type;
             }
 
-            void setValue(glm::mat4 value) { setValue(value, Mat4); }
-            void setValue(glm::vec4 value) { setValue(value, Vec4); }
-            void setValue(glm::vec3 value) { setValue(value, Vec3); }
-            void setValue(glm::vec2 value) { setValue(value, Vec2); }
-            void setValue(float value) { setValue(value, Float); }
-            void setValue(int value) { setValue(value, Int); }
-            void setValue(uint32_t value) { setValue(value, UInt); }
+            void setValue(glm::mat4 value)  { _value.m = value; _type = Mat4; }
+            void setValue(glm::vec4 value)  { _value.v4 = value; _type = Vec4; }
+            void setValue(glm::vec3 value)  { _value.v3 = value; _type = Vec3; }
+            void setValue(glm::vec2 value)  { _value.v2 = value; _type = Vec2; }
+            void setValue(float value)      { _value.f = value; _type = Float; }
+            void setValue(int value)        { _value.i = value; _type = Int; }
+            void setValue(uint32_t value)   { _value.u = value; _type = UInt; }
 
             void bind(GLint location);
 
@@ -79,10 +102,10 @@ namespace jkps
         class Material
         {
         public:
-            typedef std::variant< glm::mat4, glm::vec4, glm::vec3, glm::vec2, float, int, uint32_t> UniformValue;
+            //typedef std::variant< glm::mat4, glm::vec4, glm::vec3, glm::vec2, float, int, uint32_t> UniformValue;
 
             Material(std::shared_ptr<ShaderProgram> program);
-            void addUniformBlock(uint32_t binding, std::shared_ptr<MaterialUniformBlock> uniformBlock);
+            void addUniformBlock(uint32_t binding, uint32_t location, std::shared_ptr<MaterialUniformBlock> uniformBlock);
 
             GLint getUniformLocation(const std::string& name);
             void setUniform(GLint location, Uniform value);
@@ -99,8 +122,11 @@ namespace jkps
             void unbind();
 
         private:
+
+            typedef std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>> IndexedUniformBlock;
+
             std::shared_ptr<ShaderProgram> _program;
-            std::vector <std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>>> _uniformBlocks;          
+            std::vector <std::pair<IndexedUniformBlock, uint32_t>> _uniformBlocks;
             std::map<GLint, Uniform> _uniforms;
             std::map<GLint, std::shared_ptr<Texture>> _textures;
 

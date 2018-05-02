@@ -1,6 +1,5 @@
 #include "mesh.h"
 
-#include <iostream>
 
 using namespace jkps::gl;
 

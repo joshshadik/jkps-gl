@@ -1,8 +1,14 @@
 #pragma once
 
 #include <vector>
+
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+#else
 #include <GL/glew.h>
-#include <GL/gl.h>
+#include <GL/GL.h>
+#endif
 
 
 namespace jkps
@@ -26,7 +32,7 @@ namespace jkps
                 uint16_t _offset;
             };
 
-            VertexLayout(const std::vector<VertexAttribute>& attributes, const uint16_t stride);
+            VertexLayout(const std::vector<VertexAttribute>&& attributes, const uint16_t stride);
             VertexLayout();
 
             void bind();

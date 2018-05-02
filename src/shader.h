@@ -1,7 +1,12 @@
 #pragma once
 
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+#else
 #include <GL/glew.h>
 #include <GL/GL.h>
+#endif
 
 #include <memory>
 #include <string>
@@ -52,8 +57,10 @@ namespace jkps
             ~ShaderProgram();
 
             void bind();
-            GLint getUniformLocation(const std::string& name);
 
+            void bindUBO(GLuint location, GLuint index);
+            GLint getUniformLocation(const std::string& name);
+            GLint getUniformBlockLocation(const std::string& name);
 
         private:
             GLuint _programID;

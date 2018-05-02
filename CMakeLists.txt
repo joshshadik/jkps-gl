@@ -1,7 +1,11 @@
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.5)
 project (jkps-gl)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
+
 set(SOURCE_PATH ${CMAKE_SOURCE_DIR})
+
+option(WASM_BUILD OFF)
 
 file(GLOB SRC_FILES
     "${SOURCE_PATH}/src/*.cpp"
@@ -37,37 +41,70 @@ add_executable(jkps-sample
 source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "source" FILES ${SAMPLE_SRC_FILES})
 source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "headers" FILES ${SAMPLE_HEADER_FILES})
 
+# find_package(glm REQUIRED)
 
-
-find_package(sdl2 REQUIRED)
-find_package(glew REQUIRED)
-find_package(glm REQUIRED)
+add_library(glm INTERFACE)
+set_property(TARGET glm PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/glm/include")
 
 add_library(tinygltf INTERFACE)
 set_property(TARGET tinygltf PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/tinygltf/include")
 
-
 target_link_libraries(jkps-gl PUBLIC 
-GLEW::GLEW
-glm
-tinygltf
+    glm
+    tinygltf
 )
 
-target_link_libraries(jkps-gl PUBLIC
-glu32
-opengl32
-)
+set (TARGET jkps-gl PROPERTY CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if( WASM_BUILD )
+    target_include_directories(jkps-gl PUBLIC 
+        "${SOURCE_PATH}/thirdparty/gles3/include"
+    )
+
+    set(CMAKE_CXX_FLAGS "-o hello.html --preload-file resources/ -O2 -s USE_WEBGL2=1 -s USE_GLFW=3  -s ALLOW_MEMORY_GROWTH=1 -s WASM=1  -std=c++11 ${CMAKE_CXX_FLAGS} ")
+    add_definitions(-Wall -g -std=c++11)
+    target_compile_definitions(jkps-gl PUBLIC USE_WASM)
+    target_compile_definitions(jkps-sample PUBLIC USE_WASM)
+
+else()
+    find_package(glew REQUIRED)
+    find_package(glfw3 REQUIRED)
+
+    target_link_libraries(jkps-gl PUBLIC 
+        GLEW::GLEW
+    )
+
+    if( WIN32 )
+        target_link_libraries(jkps-gl PUBLIC
+        glu32
+        opengl32
+        )        
+    endif()
+endif()
+
+
 
 target_include_directories(jkps-sample PUBLIC 
 "${SOURCE_PATH}/src/"
+)
 
-)
-target_link_libraries(jkps-sample
-jkps-gl
-SDL2::SDL2 
-SDL2::SDL2main
-GLEW::GLEW
-glu32
-opengl32
-)
+if( WASM_BUILD )
+
+    target_link_libraries(jkps-sample
+        jkps-gl
+
+    )
+
+else()
+    target_link_libraries(jkps-sample
+        jkps-gl
+        glfw
+        GLEW::GLEW
+        glu32
+        opengl32
+    )
+
+endif()
 

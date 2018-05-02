@@ -1,16 +1,18 @@
-#version 430 core
+#version 300 es
+precision highp float;
+
 layout( location = 0) in vec3 aPos;
 layout( location = 1) in vec2 aTexcoord;
 layout( location = 2) in vec3 aNormal;
 layout( location = 3) in vec4 aTangent;
 
-layout(std140, binding = 0) uniform Common
+uniform Common
 {
 	mat4 view;
 	mat4 projection;
 };
 
-layout(std140, binding = 32) uniform PBR
+uniform PBR
 {
 	vec4 diffuseFactor;
 	float metallicFactor;

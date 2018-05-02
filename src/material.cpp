@@ -23,20 +23,25 @@ jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor& descripto
 void jkps::gl::MaterialUniformBlock::uploadData()
 {
     glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
-    GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+#ifdef USE_WASM
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, _buffer.size(), _buffer.data());
+#else
+    GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER, 0, 1, GL_MAP_WRITE_BIT);
     memcpy(p, _buffer.data(), _buffer.size());
     glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+#endif
 }
 
-void jkps::gl::MaterialUniformBlock::bind(int index)
+void jkps::gl::MaterialUniformBlock::bind(int binding)
 {
-    glBindBufferBase(GL_UNIFORM_BUFFER, index, _ubo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, binding, _ubo);
 }
 
 void jkps::gl::MaterialUniformBlock::setValue(const std::string & key, const void * data, const size_t size)
 {
     uint32_t offset = _offsets[key];
-
+    printf("offset for %s: %d \n", key.c_str(), offset);
     memcpy(_buffer.data() + offset, data, size);
 }
 
@@ -51,9 +56,10 @@ jkps::gl::Material::Material(std::shared_ptr<ShaderProgram> program)
 
 }
 
-void jkps::gl::Material::addUniformBlock(uint32_t binding, std::shared_ptr<MaterialUniformBlock> uniformBlock)
+void jkps::gl::Material::addUniformBlock(uint32_t binding, uint32_t location, std::shared_ptr<MaterialUniformBlock> uniformBlock)
 {
-    _uniformBlocks.push_back(std::make_pair(binding, uniformBlock));
+    _program->bindUBO(location, binding);
+    _uniformBlocks.push_back(std::make_pair(std::make_pair(location, uniformBlock), binding));
 }
 
 
@@ -69,22 +75,22 @@ void jkps::gl::Material::setUniform(GLint location, Uniform value)
 
 void jkps::gl::Material::setUniform(GLint location, const glm::mat4 & value)
 {
-    _uniforms[location].setValue(value, Uniform::Type::Mat4);
+    _uniforms[location].setValue(value);
 }
 
 void jkps::gl::Material::setUniform(GLint location, const glm::vec4 & value)
 {
-    _uniforms[location].setValue(value, Uniform::Type::Vec4);
+    _uniforms[location].setValue(value);
 }
 
 void jkps::gl::Material::setUniform(GLint location, const glm::vec3 & value)
 {
-    _uniforms[location].setValue(value, Uniform::Type::Vec3);
+    _uniforms[location].setValue(value);
 }
 
 void jkps::gl::Material::setUniform(GLint location, const glm::vec2 & value)
 {
-    _uniforms[location].setValue(value, Uniform::Type::Vec2);
+    _uniforms[location].setValue(value);
 }
 
 void jkps::gl::Material::setUniform(GLint location, std::shared_ptr<Texture> tex)
@@ -108,7 +114,7 @@ void jkps::gl::Material::bind()
 
     for (auto& block : _uniformBlocks)
     {
-        block.second->bind(block.first);
+        block.first.second->bind(block.second);
     }
 
     for (auto& uniform : _uniforms)
@@ -141,50 +147,43 @@ void jkps::gl::Uniform::bind(GLint location)
     {
     case Mat4:
     {
-        glm::mat4 v = std::get<glm::mat4>(_value);
-        glUniformMatrix4fv(location, 1, false, glm::value_ptr(v));
+        glUniformMatrix4fv(location, 1, false, glm::value_ptr(_value.m));
     }
     break;
 
     case Vec4:
     {
-        glm::vec4 v = std::get<glm::vec4>(_value);
-        glUniform4fv(location, 1, glm::value_ptr(v));
+        glUniform4fv(location, 1, glm::value_ptr(_value.v4));
     }
     break;
 
     case Vec3:
     {
-        glm::vec3 v = std::get<glm::vec3>(_value);
-        glUniform3fv(location, 1, glm::value_ptr(v));
+        glUniform3fv(location, 1, glm::value_ptr(_value.v3));
     }
     break;
 
     case Vec2:
     {
-        glm::vec2 v = std::get<glm::vec2>(_value);
-        glUniform2fv(location, 1, glm::value_ptr(v));
+        glUniform2fv(location, 1, glm::value_ptr(_value.v2));
     }
     break;
 
     case Float:
     {
-        float v = std::get<float>(_value);
-        glUniform1fv(location, 1, &v);
+        glUniform1fv(location, 1, &_value.f);
     }
     break;
 
     case Int:
     {
-        int v = std::get<int>(_value);
-        glUniform1i(location, v);
+        glUniform1i(location, _value.i);
     }
     break;
 
     case UInt:
     {
-        uint32_t v = std::get<uint32_t>(_value);
-        glUniform1ui(location, v);
+        glUniform1ui(location, _value.u);
     }
     break;
     }

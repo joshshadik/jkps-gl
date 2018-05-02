@@ -2,7 +2,13 @@
 
 #include "texture.h"
 
+#ifdef USE_WASM
+#include <GLES3/gl3.h>
+#include <GLES3/gl3platform.h>
+#else
 #include <GL/glew.h>
+#include <GL/GL.h>
+#endif
 
 #include <memory>
 #include <vector>
