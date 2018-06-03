@@ -37,7 +37,7 @@ void App::init()
     };
 
     Geometry::VertexData vertexData = { std::make_pair(quadVertices, vertLayout), std::make_pair(quadTexcoords, texcoordLayout) };
-    _quadGeo = std::make_shared<Geometry>(vertexData, quadVertexIndices);
+    _quadGeo = Geometry(vertexData, quadVertexIndices);
 
     auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
     auto projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
@@ -47,39 +47,37 @@ void App::init()
         sizeof(glm::mat4) * 2
     };
 
-    _globalUniformBlock = std::make_shared<MaterialUniformBlock>(globalDescriptor);
-    _globalUniformBlock->setValue("view", &view, sizeof(glm::mat4));
-    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
+    _globalUniformBlock = MaterialUniformBlock(globalDescriptor);
+    _globalUniformBlock.setValue("view", &view, sizeof(glm::mat4));
+    _globalUniformBlock.setValue("projection", &projection, sizeof(glm::mat4));
 
-    _globalUniformBlock->uploadData();
+    _globalUniformBlock.uploadData();
 
-    _globalUniformBlock->bind(0);
+    _globalUniformBlock.bind(0);
 
 
-    vs = Shader::loadFromFile("resources/shaders/standard.vs", Shader::Vertex); //std::make_shared<Shader>(vsSrc, Shader::Vertex);
-    fs = Shader::loadFromFile("resources/shaders/standard.fs", Shader::Fragment); //std::make_shared<Shader>(fsSrc, Shader::Fragment);
+    Shader::loadFromFile(&vs, "resources/shaders/standard.vs", Shader::Vertex); //std::make_shared<Shader>(vsSrc, Shader::Vertex);
+    Shader::loadFromFile(&fs, "resources/shaders/standard.fs", Shader::Fragment); //std::make_shared<Shader>(fsSrc, Shader::Fragment);
 
-    program = std::make_shared<ShaderProgram>(vs, fs);
-    material = std::make_shared<Material>(program);
+    program = ShaderProgram(&vs, &fs);
+    material = Material(&program);
 
-    boxMesh = std::make_shared<Mesh>(_quadGeo, material);
+    boxMesh = Mesh(&_quadGeo, &material);
 
-    _gltfModel = GLTFModel::loadFromFile("resources/models/venus_de_milo/scene.gltf", program);
-    _gltfModel->setMatrix(
+    GLTFModel::loadFromFile(&_gltfModel, "resources/models/venus_de_milo/scene.gltf", &program);
+    _gltfModel.setMatrix(
         glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)) *
         glm::scale(glm::mat4(), glm::vec3(0.001f))
     );
 
-    //_gltfModel->setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
+    //_gltfModel.setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
-    auto composeVS = Shader::loadFromFile("resources/shaders/compose.vs", Shader::Vertex);
-    auto composeFS = Shader::loadFromFile("resources/shaders/compose.fs", Shader::Fragment);
+    Shader::loadFromFile(&composeVS, "resources/shaders/compose.vs", Shader::Vertex);
+    Shader::loadFromFile(&composeFS, "resources/shaders/compose.fs", Shader::Fragment);
 
-    auto composeProgram = std::make_shared<ShaderProgram>(composeVS, composeFS);
-    _composeMaterial = std::make_shared<Material>(composeProgram);
-    _composeMesh = std::make_shared<Mesh>(_quadGeo, _composeMaterial);
-
-    _screenBuffer = std::make_shared<Framebuffer>();
+    composeProgram = ShaderProgram(&composeVS, &composeFS);
+    _composeMaterial = Material(&composeProgram);
+    _composeMesh = Mesh(&_quadGeo, &_composeMaterial);
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -90,12 +88,12 @@ void App::init()
 
 void App::render()
 {
-    _screenBuffer->bind();
+    _screenBuffer.bind();
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _gltfModel->render();
+    _gltfModel.render();
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
@@ -104,7 +102,7 @@ void App::render()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _composeMesh->render();
+    _composeMesh.render();
 
 #ifdef _DEBUG
     GLenum er = glGetError();
@@ -120,26 +118,24 @@ void App::resize(const glm::ivec2 & size)
     _screenSize = size;
 
     auto projection = glm::perspective(1.2f, size.x / (float)size.y, 0.1f, 100.0f);
-    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
-    _globalUniformBlock->uploadData();
+    _globalUniformBlock.setValue("projection", &projection, sizeof(glm::mat4));
+    _globalUniformBlock.uploadData();
 
+    _colorScreenTextures.push_back(Texture( size, GL_RGBA8, GL_RGBA));
+    _colorScreenTextures.push_back(Texture( size, GL_RGBA32F, GL_RGBA, GL_FLOAT));
+    _colorScreenTextures.push_back(Texture(size, GL_RGBA8, GL_RGBA));
+    _colorScreenTextures.push_back(Texture(size, GL_RGBA8, GL_RGBA));
 
-    auto colorScreenTextures = std::vector<std::shared_ptr<Texture>>();
-    colorScreenTextures.push_back(std::make_shared<Texture>( size, GL_RGBA8, GL_RGBA));
-    colorScreenTextures.push_back(std::make_shared<Texture>( size, GL_RGBA32F, GL_RGBA, GL_FLOAT));
-    colorScreenTextures.push_back(std::make_shared<Texture>(size, GL_RGBA8, GL_RGBA));
-    colorScreenTextures.push_back(std::make_shared<Texture>(size, GL_RGBA8, GL_RGBA));
+    _depthTexture = std::move(Texture( size, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT));
 
-    auto depthTexture = std::make_shared<Texture>( size, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+    _screenBuffer = Framebuffer(&_colorScreenTextures, &_depthTexture, size);
 
-    _screenBuffer->setup(colorScreenTextures, depthTexture, size);
+    _composeMaterial.setUniform(_composeMaterial.getUniformLocation("uColorTex"), &_colorScreenTextures[0]);
+    _composeMaterial.setUniform(_composeMaterial.getUniformLocation("uPositionTex"), &_colorScreenTextures[1]);
+    _composeMaterial.setUniform(_composeMaterial.getUniformLocation("uNormalTex"), &_colorScreenTextures[2]);
+    _composeMaterial.setUniform(_composeMaterial.getUniformLocation("uMetalRoughOccTex"), &_colorScreenTextures[3]);
 
-    _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uColorTex"), colorScreenTextures[0]);
-    _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uPositionTex"), colorScreenTextures[1]);
-    _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uNormalTex"), colorScreenTextures[2]);
-    _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uMetalRoughOccTex"), colorScreenTextures[3]);
-
-    _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uLightDirection"), glm::normalize(glm::vec3(0.0, -1.0, -1.0)));
+    _composeMaterial.setUniform(_composeMaterial.getUniformLocation("uLightDirection"), glm::normalize(glm::vec3(0.0, -1.0, -1.0)));
 
     Framebuffer::bindDefault();
 }

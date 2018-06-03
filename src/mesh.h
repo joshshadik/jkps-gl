@@ -2,7 +2,6 @@
 
 #include "geometry.h"
 #include "material.h"
-#include <memory>
 #include <vector>
 
 namespace jkps
@@ -12,15 +11,16 @@ namespace jkps
         class Mesh
         {
         public:
-            Mesh(std::shared_ptr<Geometry> geometry, std::shared_ptr<Material> material);
-            Mesh(std::vector<std::shared_ptr<Geometry>> geometries, std::shared_ptr<Material> material);
+            Mesh(Geometry* geometry, Material* material);
+            Mesh(std::vector<Geometry*> geometries, Material* material);
+            Mesh();
 
             void render();
             void render(const glm::mat4& mtx);
 
         private:
-            std::vector<std::shared_ptr<Geometry>> _geometries;
-            std::shared_ptr<Material> _material;
+            std::vector<Geometry*> _geometries;
+            Material* _material;
 
             GLint _modelUniformLocation;
         };

@@ -5,8 +5,13 @@
 #include "texture.h"
 
 #include <vector>
-#include <memory>
 #include <string>
+
+#define STB_IMAGE_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+#include "tiny_gltf.h"
+
 
 namespace tinygltf
 {
@@ -28,9 +33,9 @@ namespace jkps
         class GLTFModel
         {
         public:
-            GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<ShaderProgram> overrideShader);
-
-            static std::shared_ptr<GLTFModel> loadFromFile(const std::string&& filename, std::shared_ptr<ShaderProgram> overrideShader);
+            GLTFModel() {}
+            GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader);
+            static bool loadFromFile( GLTFModel* model, const std::string&& filename, ShaderProgram* overrideShader);
 
             void render();
             void setMatrix(const glm::mat4& mtx) { _matrix = mtx; }
@@ -41,16 +46,17 @@ namespace jkps
             void renderTreeFromNode(int nId, const glm::mat4& parentMtx );
 
         private:
-            typedef std::vector<std::shared_ptr<Mesh>> MeshGroup;
+            typedef std::vector<Mesh> MeshGroup;
 
             glm::mat4 _matrix;
-            std::unique_ptr<tinygltf::Model> _model;
+            tinygltf::Model _model;
             PbrUniforms _pbr;
            
             std::vector<MeshGroup> _meshGroups;
-            std::vector<std::shared_ptr<Geometry>> _geometries;
-            std::vector<std::shared_ptr<Material>> _materials;
-            std::vector<std::shared_ptr<Texture>> _textures;
+            std::vector<Geometry> _geometries;
+            std::vector<Material> _materials;
+            std::vector<Texture> _textures;
+            std::vector<MaterialUniformBlock> _ubos;
         };
 
     }

@@ -1,14 +1,5 @@
 #include "gltfModel.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
-#include "tiny_gltf.h"
-
-
-#include <memory>
-
 using namespace jkps::gl;
 
 bool loadImageData(tinygltf::Image*, std::string*, int, int, const unsigned char*, int, void*) {
@@ -51,10 +42,10 @@ int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::
     return texIndex;
 }
 
-GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<ShaderProgram> overrideShader)
+GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     : _model(std::move(model))
 {
-    for (const auto& image : _model->images)
+    for (const auto& image : _model.images)
     {
         GLuint format, layout;
         switch (image.component)
@@ -69,47 +60,47 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
             layout = GL_RGBA;
             break;
         }
-        auto texture = std::make_shared<Texture>(image.image, glm::ivec2(image.width, image.height), format, layout);
-        _textures.push_back(texture);
+        auto tex = Texture(image.image, glm::ivec2(image.width, image.height), format, layout);
+        _textures.push_back(std::move(tex));
     }
 
-    for (const auto& material : _model->materials)
+    for (const auto& material : _model.materials)
     {
-        auto mat = std::make_shared<Material>(overrideShader);
+        auto mat = Material(overrideShader);
         auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
         int diffIndex = getTextureIndex(material, pbrExt, "baseColorTexture", "diffuseTexture");
-        auto loc = mat->getUniformLocation("uDiffuse");
+        auto loc = mat.getUniformLocation("uDiffuse");
 
         if (diffIndex >= 0)
         {        
-            mat->setUniform(loc, _textures[diffIndex]);
+            mat.setUniform(loc, &_textures[diffIndex]);
         }
         else
         {
             std::vector<uint8_t> texData;
             glm::ivec2 size(512, 512);
             texData.assign(size.x * size.y * 3, 255);
-            auto tex = std::make_shared<Texture>(texData, size, GL_RGB8, GL_RGB);
-            _textures.push_back(tex);
-            mat->setUniform(loc, tex);
+            auto tex = Texture(texData, size, GL_RGB8, GL_RGB);
+            _textures.push_back(std::move(tex));
+            mat.setUniform(loc, &_textures.back());
         }
 
         int normalIndex = getTextureIndex(material, pbrExt, "normalTexture", "normalTexture");
-        auto nLoc = mat->getUniformLocation("uNormalTex");
+        auto nLoc = mat.getUniformLocation("uNormalTex");
 
         if (normalIndex >= 0)
         {
-            mat->setUniform(nLoc, _textures[normalIndex]);
+            mat.setUniform(nLoc, &(_textures[normalIndex]));
         }
 
 
         int occIndex = getTextureIndex(material, pbrExt, "occlusionTexture", "occlusionTexture");
-        auto oLoc = mat->getUniformLocation("uOcclusionTex");
+        auto oLoc = mat.getUniformLocation("uOcclusionTex");
 
         if (occIndex >= 0)
         {
-            mat->setUniform(oLoc, _textures[occIndex]);
+            mat.setUniform(oLoc, &_textures[occIndex]);
         }
 
         glm::vec4 diffuseFactorColor{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -124,7 +115,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
         };
 
 
-        auto ubo = std::make_shared<MaterialUniformBlock>(pbrDescriptor);
+        auto ubo = MaterialUniformBlock(pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
         {          
@@ -135,7 +126,7 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
                 for (int i = 0; i < arrValues.size(); ++i)
                 {
-                    diffuseFactorColor[i] = arrValues.at(i).Get<int>();
+                    diffuseFactorColor[i] = (float)arrValues.at(i).Get<int>();
                 }
             }
         }
@@ -150,19 +141,20 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
                 for (int i = 0; i < 4; ++i)
                 {
-                    diffuseFactorColor[i] = diffFactor[i];
+                    diffuseFactorColor[i] = (float)diffFactor[i];
                 }
             }
         }
 
         printf("diffuse color factor: %f, %f, %f, %f \n", diffuseFactorColor[0], diffuseFactorColor[1], diffuseFactorColor[2], diffuseFactorColor[3]);
 
-        ubo->setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
-        ubo->uploadData();
+        ubo.setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
+        ubo.uploadData();
 
+        _ubos.push_back(std::move(ubo));
         GLint pbrLoc = overrideShader->getUniformBlockLocation("PBR");
         printf("pbr loc: %d \n", pbrLoc);
-        mat->addUniformBlock(1, pbrLoc, ubo);
+        mat.addUniformBlock(1, pbrLoc, &_ubos.back());
 
         auto alphaMode = material.additionalValues.find("alphaMode");
         if (alphaMode != material.additionalValues.end())
@@ -171,15 +163,15 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
 
             if (mode == "BLEND")
             {
-                mat->setBlended(true);
-                mat->setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                mat.setBlended(true);
+                mat.setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
         }
 
-        _materials.push_back(mat);
+        _materials.push_back(std::move(mat));
     }
 
-    for (const auto& mesh : _model->meshes)
+    for (const auto& mesh : _model.meshes)
     {
         MeshGroup meshGroup;
 
@@ -193,9 +185,9 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
                 GLuint attrLoc;
                 if (Shader::getStandardAttribute(attribute.first, attrLoc))
                 {
-                    const auto& accessor = _model->accessors[attribute.second];
-                    const auto& bufferView = _model->bufferViews[accessor.bufferView];
-                    const auto& buffer = _model->buffers[bufferView.buffer];
+                    const auto& accessor = _model.accessors[attribute.second];
+                    const auto& bufferView = _model.bufferViews[accessor.bufferView];
+                    const auto& buffer = _model.buffers[bufferView.buffer];
 
                     uint32_t elementSize = tinygltf::GetTypeSizeInBytes(accessor.type);
                     std::vector<float> vData;
@@ -211,9 +203,9 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
                 }
             }
 
-            const auto& idxAccessor = _model->accessors[primitive.indices];
-            const auto& idxBufferView = _model->bufferViews[idxAccessor.bufferView];
-            const auto& idxBuffer = _model->buffers[idxBufferView.buffer];
+            const auto& idxAccessor = _model.accessors[primitive.indices];
+            const auto& idxBufferView = _model.bufferViews[idxAccessor.bufferView];
+            const auto& idxBuffer = _model.buffers[idxBufferView.buffer];
 
             const uint8_t* start = idxBuffer.data.data() + idxBufferView.byteOffset + idxAccessor.byteOffset;
             if (idxAccessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
@@ -229,28 +221,29 @@ GLTFModel::GLTFModel(std::unique_ptr<tinygltf::Model> model, std::shared_ptr<Sha
                 std::copy_n(reinterpret_cast<const uint32_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
 
-            auto geo = std::make_shared<Geometry>(vBuffers, iBuffer);
+            auto geo = Geometry(vBuffers, iBuffer);
+            _geometries.push_back(std::move(geo));
 
-            auto m = std::make_shared<Mesh>( geo, _materials[primitive.material]);
-            meshGroup.push_back(m);
+            auto m = Mesh( &_geometries.back(), &_materials[primitive.material]);
+            meshGroup.push_back(std::move(m));
         }
     
-        _meshGroups.push_back(meshGroup);
+        _meshGroups.push_back(std::move(meshGroup));
     }
 
-    const auto& scene = _model->scenes[_model->defaultScene];
+    const auto& scene = _model.scenes[_model.defaultScene];
 
     for (const auto nId : scene.nodes) // todo : more than default scene
     {
-        const auto& node = _model->nodes[nId];
+        const auto& node = _model.nodes[nId];
 
         importNode(node);
     }
 }
 
-std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename, std::shared_ptr<ShaderProgram> overrideShader)
+bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename, ShaderProgram* overrideShader)
 {
-    auto model = std::unique_ptr<tinygltf::Model>(new tinygltf::Model());
+    auto model = tinygltf::Model();
     tinygltf::TinyGLTF gltf_ctx;
 
     std::string err;
@@ -260,12 +253,12 @@ std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename
     if (ext.compare("glb") == 0) {
         printf("Reading binary glTF\n");
         // assume binary glTF.
-        ret = gltf_ctx.LoadBinaryFromFile(model.get(), &err, filename.c_str());
+        ret = gltf_ctx.LoadBinaryFromFile(&model, &err, filename.c_str());
     }
     else {
         printf("Reading ASCII glTF\n");
         // assume ascii glTF.
-        ret = gltf_ctx.LoadASCIIFromFile(model.get(), &err, filename.c_str());
+        ret = gltf_ctx.LoadASCIIFromFile(&model, &err, filename.c_str());
     }
 
     if (!err.empty()) {
@@ -274,15 +267,16 @@ std::shared_ptr<GLTFModel> GLTFModel::loadFromFile(const std::string && filename
 
     if (!ret) {
         printf("Failed to parse glTF\n");
-        return nullptr;
+        return false;
     }
 
-    return std::make_shared<GLTFModel>(std::move(model), overrideShader);
+    *gltfModel = std::move(GLTFModel(std::move(model), overrideShader));
+    return true;
 }
 
 void jkps::gl::GLTFModel::render()
 {
-    const auto& scene = _model->scenes[_model->defaultScene];
+    const auto& scene = _model.scenes[_model.defaultScene];
     for (auto id : scene.nodes)
     {
         renderTreeFromNode(id, _matrix);
@@ -294,14 +288,14 @@ void jkps::gl::GLTFModel::importNode(const tinygltf::Node & node)
 
     for (const auto nId : node.children)
     {
-        const auto& n = _model->nodes[nId];
+        const auto& n = _model.nodes[nId];
         importNode(n);
     }
 }
 
 void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx)
 {
-    const auto& node = _model->nodes[nId];
+    const auto& node = _model.nodes[nId];
 
     glm::mat4 mtx;
 
@@ -314,9 +308,9 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
 
     if (node.mesh >= 0)
     {
-        for (auto mesh : _meshGroups[node.mesh])
+        for (auto& mesh : _meshGroups[node.mesh])
         {
-            mesh->render(mtx);
+            mesh.render(mtx);
         }
     }
 

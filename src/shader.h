@@ -8,7 +8,6 @@
 #include <GL/GL.h>
 #endif
 
-#include <memory>
 #include <string>
 #include <map>
 #include <vector>
@@ -29,32 +28,42 @@ namespace jkps
         public:
             enum Type
             {
+                Invalid,
                 Vertex,
                 Fragment
             };
 
             Shader(const std::string& source, Type type);
+            Shader();
             ~Shader();
+            Shader(Shader&& program);
+            Shader& operator=(Shader&& program);
 
             void attach(GLuint program);
             void detach(GLuint program);
 
-            static std::shared_ptr<Shader> loadFromFile(const std::string& filePath, Type type);
+            static void loadFromFile(Shader* shader, const std::string& filePath, Type type);
 
         private:
+            Shader(const Shader&) = delete;
+            Shader& operator=(Shader const &) = delete;
+
             static GLenum typeToNative(Type);
 
             GLuint _shaderID;
-            Type _type;
+            Type _type = Type::Invalid;
         };
 
 
         class ShaderProgram
         {
         public:
-            ShaderProgram(std::vector<std::shared_ptr<Shader>> shaders);
-            ShaderProgram(std::shared_ptr<Shader> vs, std::shared_ptr<Shader> fs);
+            ShaderProgram(std::vector<Shader*> shaders);
+            ShaderProgram(Shader* vs, Shader* fs);
             ~ShaderProgram();
+            ShaderProgram();
+            ShaderProgram(ShaderProgram&& program);
+            ShaderProgram& operator=(ShaderProgram&& program);
 
             void bind();
 
@@ -63,9 +72,12 @@ namespace jkps
             GLint getUniformBlockLocation(const std::string& name);
 
         private:
-            GLuint _programID;
+            ShaderProgram(const ShaderProgram&) = delete;
+            ShaderProgram& operator=(ShaderProgram const &) = delete;
 
-            std::vector<std::shared_ptr<Shader>> _shaders;
+            GLuint _programID;
+            bool _valid = true;
+            std::vector<Shader*> _shaders;
         };
 
     }

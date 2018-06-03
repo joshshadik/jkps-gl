@@ -3,16 +3,22 @@
 
 using namespace jkps::gl;
 
-jkps::gl::Mesh::Mesh(std::shared_ptr<Geometry> geometry, std::shared_ptr<Material> material)
-    : Mesh(std::vector<std::shared_ptr<Geometry>>{ geometry }, material)
+jkps::gl::Mesh::Mesh(Geometry* geometry, Material* material)
+    : Mesh(std::vector<Geometry*>{ geometry }, material)
 {
 }
 
-jkps::gl::Mesh::Mesh(std::vector<std::shared_ptr<Geometry>> geometries, std::shared_ptr<Material> material)
+jkps::gl::Mesh::Mesh(std::vector<Geometry*> geometries, Material* material)
     : _geometries(geometries)
     , _material(material)
 {
     _modelUniformLocation = _material->getUniformLocation("model");
+}
+
+jkps::gl::Mesh::Mesh()
+    : _material(nullptr)
+{
+
 }
 
 void jkps::gl::Mesh::render()

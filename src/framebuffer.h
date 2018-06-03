@@ -10,7 +10,6 @@
 #include <GL/GL.h>
 #endif
 
-#include <memory>
 #include <vector>
 
 namespace jkps
@@ -20,12 +19,15 @@ namespace jkps
         class Framebuffer
         {
         public:
+            Framebuffer(std::vector<Texture>* color, Texture* depth, const glm::ivec2& size);
             Framebuffer();
+            ~Framebuffer();
 
-            void setup(const std::vector<std::shared_ptr<Texture>>& color, std::shared_ptr<Texture> depth, const glm::ivec2& size);
+            Framebuffer(Framebuffer&& fb);
+            Framebuffer& operator=(Framebuffer&& fb);
 
-            std::shared_ptr<Texture> color(int index = 0) { return _color[index]; }
-            std::shared_ptr<Texture> depth() { return _depth; }
+            Texture* color(int index = 0) { return &_color->at(index); }
+            Texture* depth() { return _depth; }
             GLuint id() { return _fboId; }
 
             void bind();
@@ -33,11 +35,16 @@ namespace jkps
             static void bindDefault(const glm::ivec2& viewport);
 
         private:
+            Framebuffer(const Framebuffer&) = delete;
+            Framebuffer& operator=(Framebuffer const&) = delete;
+
             GLuint _fboId;
 
             glm::ivec2 _size;
-            std::vector<std::shared_ptr<Texture>> _color;
-            std::shared_ptr<Texture> _depth;
+            std::vector<Texture>* _color;
+            Texture* _depth;
+
+            bool _valid = false;
 
         };
     }
