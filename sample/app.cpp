@@ -126,7 +126,7 @@ void App::resize(const glm::ivec2 & size)
     _colorScreenTextures.push_back(Texture(size, GL_RGBA8, GL_RGBA));
     _colorScreenTextures.push_back(Texture(size, GL_RGBA8, GL_RGBA));
 
-    _depthTexture = std::move(Texture( size, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT));
+    _depthTexture = Texture( size, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
 
     _screenBuffer = Framebuffer(&_colorScreenTextures, &_depthTexture, size);
 

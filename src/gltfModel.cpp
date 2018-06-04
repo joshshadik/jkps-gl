@@ -270,7 +270,7 @@ bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename
         return false;
     }
 
-    *gltfModel = std::move(GLTFModel(std::move(model), overrideShader));
+    *gltfModel = GLTFModel(std::move(model), overrideShader);
     return true;
 }
 
