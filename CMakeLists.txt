@@ -23,8 +23,6 @@ add_library(jkps-gl
 source_group(TREE "${SOURCE_PATH}/src/" PREFIX "source" FILES ${SRC_FILES})
 source_group(TREE "${SOURCE_PATH}/src/" PREFIX "headers" FILES ${HEADER_FILES})
 
-
-
 file(GLOB SAMPLE_SRC_FILES
     "${SOURCE_PATH}/sample/*.cpp"
 )
@@ -48,6 +46,7 @@ set_property(TARGET glm PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/t
 
 add_library(tinygltf INTERFACE)
 set_property(TARGET tinygltf PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/tinygltf/include")
+target_compile_definitions(jkps-gl PRIVATE TINYGLTF_IMPLEMENTATION )
 
 target_link_libraries(jkps-gl PUBLIC 
     glm

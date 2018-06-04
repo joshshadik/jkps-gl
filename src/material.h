@@ -13,10 +13,8 @@
 #include <GL/GL.h>
 #endif
 
-#include <memory>
 #include <string>
 #include <vector>
-//#include <variant>
 
 namespace jkps
 {
@@ -82,6 +80,10 @@ namespace jkps
 
         public:
             MaterialUniformBlock(const Descriptor& descriptor);
+            MaterialUniformBlock();
+            ~MaterialUniformBlock();
+            MaterialUniformBlock(MaterialUniformBlock&& uniformBlock);
+            MaterialUniformBlock& operator=(MaterialUniformBlock&& uniformBlock);
 
             void uploadData();
             void bind(int index);
@@ -90,11 +92,16 @@ namespace jkps
             void setValue(const void* data, const size_t offset, const size_t size);
 
         private:
+            MaterialUniformBlock(const MaterialUniformBlock&) = delete;
+            MaterialUniformBlock& operator=(MaterialUniformBlock const&) = delete;
+
             GLuint _ubo;
 
             Descriptor _descriptor;
             std::vector<uint8_t> _buffer;
             std::map<std::string, uint32_t> _offsets;
+
+            bool _valid = true;
         };
 
 
@@ -104,8 +111,9 @@ namespace jkps
         public:
             //typedef std::variant< glm::mat4, glm::vec4, glm::vec3, glm::vec2, float, int, uint32_t> UniformValue;
 
-            Material(std::shared_ptr<ShaderProgram> program);
-            void addUniformBlock(uint32_t binding, uint32_t location, std::shared_ptr<MaterialUniformBlock> uniformBlock);
+            Material(ShaderProgram* program);
+            Material();
+            void addUniformBlock(uint32_t binding, uint32_t location, MaterialUniformBlock* uniformBlock);
 
             GLint getUniformLocation(const std::string& name);
             void setUniform(GLint location, Uniform value);
@@ -113,7 +121,7 @@ namespace jkps
             void setUniform(GLint location, const glm::vec4& value);
             void setUniform(GLint location, const glm::vec3& value);
             void setUniform(GLint location, const glm::vec2& value);
-            void setUniform(GLint location, std::shared_ptr<Texture> tex);
+            void setUniform(GLint location, Texture* tex);
 
             void setBlended(bool blend) { _blended = blend; }
             void setBlendFunction(GLenum src, GLenum dst) { _blendSrc = src; _blendDst = dst; }
@@ -123,18 +131,16 @@ namespace jkps
 
         private:
 
-            typedef std::pair<uint32_t, std::shared_ptr<MaterialUniformBlock>> IndexedUniformBlock;
+            typedef std::pair<uint32_t, MaterialUniformBlock*> IndexedUniformBlock;
 
-            std::shared_ptr<ShaderProgram> _program;
+            ShaderProgram* _program;
             std::vector <std::pair<IndexedUniformBlock, uint32_t>> _uniformBlocks;
             std::map<GLint, Uniform> _uniforms;
-            std::map<GLint, std::shared_ptr<Texture>> _textures;
+            std::map<GLint, Texture*> _textures;
 
             bool _blended = false;
             GLenum _blendSrc;
             GLenum _blendDst;
-
-            //std::vector<std::pair<GLint, std::shared_ptr<Texture>>> _textures;
         };
 
     }

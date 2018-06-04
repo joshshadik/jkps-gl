@@ -13,14 +13,14 @@
 #include "app.h"
 
 GLFWwindow* window;
-App* app;
+static App app;
 
 void main_loop()
 {
     //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT);
 
-    app->render();
+    app.render();
 
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
@@ -34,7 +34,6 @@ void main_loop()
 int main(void)
 {
     //App app;
-    app = new App();
 
 
     /* Initialize the library */
@@ -69,8 +68,8 @@ int main(void)
     glewInit();
 #endif
 
-    app->init();
-    app->resize(size);
+    app.init();
+    app.resize(size);
 
 #ifdef USE_WASM
     emscripten_set_main_loop(main_loop, 0, 1);

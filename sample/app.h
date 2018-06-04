@@ -1,6 +1,7 @@
 #pragma once
 
 #include "material.h"
+#include "shader.h"
 #include "mesh.h"
 #include "framebuffer.h"
 #include "gltfModel.h"
@@ -15,8 +16,6 @@
 #include <GL/GL.h>
 #endif
 
-#include <memory>
-
 using namespace jkps::gl;
 
 struct GlobalUniforms
@@ -29,6 +28,9 @@ struct GlobalUniforms
 class App
 {
 public:
+
+    App() {}
+
     void init();
 
     void render();
@@ -36,26 +38,31 @@ public:
     void resize(const glm::ivec2& size);
 
 private:
-    std::shared_ptr<Shader> vs;
-    std::shared_ptr<Shader> fs;
+    Shader vs;
+    Shader fs;
 
-    std::shared_ptr<ShaderProgram> program;
+    Shader composeVS;
+    Shader composeFS;
 
-    std::shared_ptr<Material> material;
-    std::shared_ptr<Geometry> _quadGeo;
+    ShaderProgram program;
+    ShaderProgram composeProgram;
 
-    std::shared_ptr<Mesh> boxMesh;
+    Material material;
+    Geometry _quadGeo;
 
-    std::shared_ptr<GLTFModel> _gltfModel;
+    Mesh boxMesh;
 
-    std::shared_ptr<Framebuffer> _screenBuffer;
+    GLTFModel _gltfModel;
 
-    std::shared_ptr<Material> _composeMaterial;
-    std::shared_ptr<Mesh> _composeMesh;
+    Framebuffer _screenBuffer;
+
+    Material _composeMaterial;
+    Mesh _composeMesh;
 
     glm::ivec2 _screenSize;
 
     GlobalUniforms _gUniforms;
-    std::shared_ptr<MaterialUniformBlock> _globalUniformBlock;
-
+    MaterialUniformBlock _globalUniformBlock;
+    std::vector<Texture> _colorScreenTextures;
+    Texture _depthTexture;
 };

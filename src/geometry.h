@@ -49,14 +49,18 @@ namespace jkps
             typedef std::vector<uint32_t> IndexData;
 
             Geometry(const VertexData& vertexData, const IndexData& indices);
+            Geometry();
             ~Geometry();
+            Geometry(Geometry&& geo);
+            Geometry& operator=(Geometry&& geo);
 
             void bind();
 
             void render();
 
         private:
-
+            Geometry(const Geometry&) = delete;
+            Geometry& operator=(Geometry const &) = delete;
 
             VertexData	_vertexData;
             IndexData	_indices;
@@ -67,6 +71,7 @@ namespace jkps
             GLuint _ibo;
             GLuint _vao;
 
+            bool _valid = true;
         };
     }
 }

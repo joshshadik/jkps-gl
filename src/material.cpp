@@ -20,6 +20,44 @@ jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor& descripto
     glBufferData(GL_UNIFORM_BUFFER, _descriptor.second, _buffer.data(), GL_DYNAMIC_DRAW);
 }
 
+jkps::gl::MaterialUniformBlock::MaterialUniformBlock()
+    : _valid(false)
+{
+}
+
+jkps::gl::MaterialUniformBlock::~MaterialUniformBlock()
+{
+    if (_valid)
+    {
+        glDeleteBuffers(1, &_ubo);
+    }
+}
+
+jkps::gl::MaterialUniformBlock::MaterialUniformBlock(MaterialUniformBlock && uniformBlock)
+    : _ubo(uniformBlock._ubo)
+    , _descriptor(uniformBlock._descriptor)
+    , _buffer(std::move(uniformBlock._buffer))
+    , _offsets(std::move(uniformBlock._offsets))
+    , _valid(uniformBlock._valid)
+{
+    uniformBlock._valid = false;
+}
+
+MaterialUniformBlock& jkps::gl::MaterialUniformBlock::operator=(MaterialUniformBlock && uniformBlock)
+{
+    _ubo = uniformBlock._ubo;
+    _descriptor = uniformBlock._descriptor;
+    _buffer = std::move(uniformBlock._buffer);
+    _offsets = std::move(uniformBlock._offsets);
+    _valid = uniformBlock._valid;
+
+    uniformBlock._valid = false;
+
+    return *this;
+}
+
+
+
 void jkps::gl::MaterialUniformBlock::uploadData()
 {
     glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
@@ -50,13 +88,19 @@ void jkps::gl::MaterialUniformBlock::setValue(const void * data, const size_t by
     memcpy(_buffer.data() + byteOffset, data, size);
 }
 
-jkps::gl::Material::Material(std::shared_ptr<ShaderProgram> program)
+jkps::gl::Material::Material(ShaderProgram* program)
     : _program(program)
 {
 
 }
 
-void jkps::gl::Material::addUniformBlock(uint32_t binding, uint32_t location, std::shared_ptr<MaterialUniformBlock> uniformBlock)
+jkps::gl::Material::Material()
+    : Material(nullptr)
+{
+}
+
+
+void jkps::gl::Material::addUniformBlock(uint32_t binding, uint32_t location, MaterialUniformBlock* uniformBlock)
 {
     _program->bindUBO(location, binding);
     _uniformBlocks.push_back(std::make_pair(std::make_pair(location, uniformBlock), binding));
@@ -93,7 +137,7 @@ void jkps::gl::Material::setUniform(GLint location, const glm::vec2 & value)
     _uniforms[location].setValue(value);
 }
 
-void jkps::gl::Material::setUniform(GLint location, std::shared_ptr<Texture> tex)
+void jkps::gl::Material::setUniform(GLint location, Texture* tex)
 {
     _textures[location] = tex;
 }

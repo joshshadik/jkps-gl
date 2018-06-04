@@ -28,9 +28,34 @@ jkps::gl::Texture::Texture(const glm::ivec2 & size, GLuint format, GLuint layout
 
 }
 
+jkps::gl::Texture::Texture()
+    : _valid(false)
+{
+
+}
+
 Texture::~Texture()
 {
-    glDeleteTextures(1, &_textureID);
+    if (_valid)
+    {
+        glDeleteTextures(1, &_textureID);
+    }
+}
+
+jkps::gl::Texture::Texture(Texture && tex)
+    : _textureID(tex._textureID)
+    , _valid(tex._valid)
+{
+    tex._valid = false;
+}
+
+Texture & jkps::gl::Texture::operator=(Texture && tex)
+{
+    _textureID = tex._textureID;
+    _valid = tex._valid;
+    tex._valid = false;
+
+    return *this;
 }
 
 void Texture::bind()

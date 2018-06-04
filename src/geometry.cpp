@@ -32,12 +32,47 @@ Geometry::Geometry(const VertexData& vertexData, const IndexData& indices)
     _elementCount = indices.size();
 }
 
+jkps::gl::Geometry::Geometry()
+    :_valid(false)
+{
+}
+
 jkps::gl::Geometry::~Geometry()
 {
-    glDeleteVertexArrays(1, &_vao);
+    if (_valid)
+    {
+        glDeleteVertexArrays(1, &_vao);
 
-    glDeleteBuffers(_vbos.size(), _vbos.data());
-    glDeleteBuffers(1, &_ibo);
+        glDeleteBuffers(_vbos.size(), _vbos.data());
+        glDeleteBuffers(1, &_ibo);
+    }
+}
+
+jkps::gl::Geometry::Geometry(Geometry && geo)
+    : _vertexData(std::move(geo._vertexData))
+    , _indices(std::move(geo._indices))
+    , _elementCount(geo._elementCount)
+    , _vbos(std::move(geo._vbos))
+    , _ibo(geo._ibo)
+    , _vao(geo._vao)
+    , _valid(geo._valid)
+{
+    geo._valid = false;
+}
+
+Geometry& jkps::gl::Geometry::operator=(Geometry && geo)
+{
+    _vertexData = std::move(geo._vertexData);
+    _indices = std::move(geo._indices);
+    _elementCount = geo._elementCount;
+    _vbos = std::move(geo._vbos);
+    _ibo = geo._ibo;
+    _vao = geo._vao;
+    _valid = geo._valid;
+
+    geo._valid = false;
+
+    return *this;
 }
 
 void Geometry::bind()

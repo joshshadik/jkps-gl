@@ -26,6 +26,7 @@ bool jkps::gl::Shader::getStandardAttribute(const std::string & key, GLuint & ou
 }
 
 Shader::Shader(const std::string & source, Type type)
+    : _type(type)
 {
     _shaderID = glCreateShader(typeToNative(type));
     const GLchar *src = source.c_str();
@@ -45,14 +46,41 @@ Shader::Shader(const std::string & source, Type type)
 
         printf("%s\n", errorLog.data());
 
+        _type = Invalid;
         glDeleteShader(_shaderID); // Don't leak the shader.
         return;
     }
 }
 
+Shader::Shader()
+    : _type(Invalid)
+{
+
+}
+
 jkps::gl::Shader::~Shader()
 {
-    glDeleteShader(_shaderID);
+    if (_type != Invalid)
+    {
+        glDeleteShader(_shaderID);
+    }
+}
+
+Shader::Shader(Shader&& shader)
+    : _type(shader._type)
+    , _shaderID(shader._shaderID)
+{
+    shader._type = Invalid;
+}
+
+Shader& Shader::operator=(Shader&& shader)
+{
+    _type = shader._type;
+    _shaderID = shader._shaderID;
+
+    shader._type = Invalid;
+
+    return *this;
 }
 
 void Shader::attach(GLuint program)
@@ -65,7 +93,7 @@ void jkps::gl::Shader::detach(GLuint program)
     glDetachShader(program, _shaderID);
 }
 
-std::shared_ptr<Shader> Shader::loadFromFile(const std::string & filePath, Type type)
+void Shader::loadFromFile(Shader* shader, const std::string & filePath, Type type)
 {
     printf("loading shader from file %s \n", filePath.c_str());
 
@@ -73,7 +101,7 @@ std::shared_ptr<Shader> Shader::loadFromFile(const std::string & filePath, Type 
     std::stringstream buffer;
     buffer << t.rdbuf();
     std::string src = buffer.str();
-    return std::make_shared<Shader>(src, type);
+    *shader = std::move(Shader(src, type));
 }
 
 GLenum Shader::typeToNative(Type type)
@@ -91,7 +119,7 @@ GLenum Shader::typeToNative(Type type)
     return -1;
 }
 
-jkps::gl::ShaderProgram::ShaderProgram(std::vector<std::shared_ptr<Shader>> shaders)
+jkps::gl::ShaderProgram::ShaderProgram(std::vector<Shader*> shaders)
     : _shaders(shaders)
 {
     _programID = glCreateProgram();
@@ -113,17 +141,45 @@ jkps::gl::ShaderProgram::ShaderProgram(std::vector<std::shared_ptr<Shader>> shad
 }
 
 
-ShaderProgram::ShaderProgram(std::shared_ptr<Shader> vs, std::shared_ptr<Shader> fs)
-    : ShaderProgram(std::vector<std::shared_ptr<Shader>>{ vs, fs })
+ShaderProgram::ShaderProgram(Shader* vs, Shader* fs)
+    : ShaderProgram(std::vector<Shader*>{ vs, fs })
 {
+}
+
+jkps::gl::ShaderProgram::ShaderProgram()
+    : _valid(false)
+{
+
 }
 
 jkps::gl::ShaderProgram::~ShaderProgram()
 {
-    for (auto shader : _shaders)
+    if (_valid)
     {
-        shader->detach(_programID);
+        for (auto shader : _shaders)
+        {
+            shader->detach(_programID);
+        }
     }
+}
+
+jkps::gl::ShaderProgram::ShaderProgram(ShaderProgram&& program)
+    : _programID(program._programID)
+    , _shaders(std::move(program._shaders))
+    , _valid(program._valid)
+{
+    program._valid = false;
+}
+
+ShaderProgram& ShaderProgram::operator=(ShaderProgram&& program)
+{
+    _programID = program._programID;
+    _shaders = std::move(program._shaders);
+
+    _valid = program._valid;
+    program._valid = false;
+
+    return *this;
 }
 
 void ShaderProgram::bind()
