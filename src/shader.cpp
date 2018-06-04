@@ -101,7 +101,7 @@ void Shader::loadFromFile(Shader* shader, const std::string & filePath, Type typ
     std::stringstream buffer;
     buffer << t.rdbuf();
     std::string src = buffer.str();
-    *shader = std::move(Shader(src, type));
+    *shader = Shader(src, type);
 }
 
 GLenum Shader::typeToNative(Type type)
