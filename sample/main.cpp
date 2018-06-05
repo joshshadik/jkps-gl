@@ -14,15 +14,14 @@
 #include "app.h"
 #include "controls.h"
 
-#include <chrono>
-
 GLFWwindow* window;
 static App app;
 
 Controls controls;
 
 glm::ivec2 size = glm::ivec2(1280, 720);
-std::chrono::high_resolution_clock::time_point lastTimePoint;
+
+double lastTime;
 
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -43,24 +42,19 @@ EM_BOOL on_pointerlockchange(int eventType, const EmscriptenPointerlockChangeEve
         printf("pointerlockchange deactivated, so enabling cursor\n");
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
-    
+
     return 0;
 }
 #endif
 
 void main_loop()
 {
-    using namespace std::chrono;
-
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
-    duration<double> time_span = duration_cast<duration<double>>(t1 - lastTimePoint);
+    double currTime = glfwGetTime();
 
     /* Poll for and process events */
     glfwPollEvents();
 
-
-    app.update(time_span.count());
+    app.update(currTime - lastTime);
     app.render();
 
     /* Swap front and back buffers */
@@ -68,8 +62,7 @@ void main_loop()
 
     controls.updateStates();
 
-
-    lastTimePoint = t1;
+    lastTime = currTime;
 }
 
 int main(void)
@@ -90,7 +83,7 @@ int main(void)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 #endif
 
-    
+
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(size.x, size.y, "Hello World", NULL, NULL);
 
@@ -117,7 +110,8 @@ int main(void)
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
-    lastTimePoint = std::chrono::high_resolution_clock::now();
+    lastTime = glfwGetTime();
+
 #ifdef USE_WASM
     emscripten_set_pointerlockchange_callback(NULL, NULL, 0, on_pointerlockchange);
     emscripten_set_main_loop(main_loop, 0, 1);
@@ -129,7 +123,7 @@ int main(void)
 
         main_loop();
     }
-    
+
 #endif
 
     glfwTerminate();
