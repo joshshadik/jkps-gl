@@ -8,6 +8,7 @@
 
 void App::init()
 {
+    printf("app version %f \n", 0.01f);
     std::vector<float> quadVertices{
         -1.0f, -1.0f, -1.0f,
         1.0f, -1.0f, -1.0f,
@@ -64,11 +65,13 @@ void App::init()
 
     boxMesh = Mesh(&_quadGeo, &material);
 
+    _modelRot = glm::quat_cast(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
+    _modelScale = glm::vec3(0.001f);
+
+    _modelMtx =  glm::scale(glm::mat4_cast(_modelRot), _modelScale);
+
     GLTFModel::loadFromFile(&_gltfModel, "resources/models/venus_de_milo/scene.gltf", &program);
-    _gltfModel.setMatrix(
-        glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)) *
-        glm::scale(glm::mat4(), glm::vec3(0.001f))
-    );
+    _gltfModel.setMatrix( _modelMtx );
 
     //_gltfModel.setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
@@ -111,6 +114,24 @@ void App::render()
         printf("error: %d \n", er);
     }
 #endif
+}
+
+void App::update(double dt)
+{
+    if (_controls->buttonHeld(Controls::MOUSE_LEFT))
+    {
+        float rotAmount = _controls->deltaMousePos().x * 90.0f * (float)dt;
+        _modelRot = glm::angleAxis(rotAmount, glm::vec3(0.0, 1.0, 0.0)) * _modelRot;
+        
+        _modelMtx = glm::scale(glm::mat4_cast(_modelRot), _modelScale);
+
+        _gltfModel.setMatrix(_modelMtx);
+    }
+}
+
+void App::setControls(Controls * controls)
+{
+    _controls = controls;
 }
 
 void App::resize(const glm::ivec2 & size)
