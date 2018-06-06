@@ -45,8 +45,12 @@ int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::
 GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     : _model(std::move(model))
 {
-    for (const auto& image : _model.images)
+    _textures.reserve(32);
+    _textures.resize(_model.images.size());
+    for (int i = 0; i < _model.images.size(); ++i)
     {
+        const auto& image = _model.images[i];
+
         GLuint format, layout;
         switch (image.component)
         {
@@ -61,11 +65,16 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             break;
         }
         auto tex = Texture(image.image, glm::ivec2(image.width, image.height), format, layout);
-        _textures.push_back(std::move(tex));
+        _textures[i] = std::move(tex);
     }
 
-    for (const auto& material : _model.materials)
+    _ubos.resize(_model.materials.size());
+    _materials.resize(_model.materials.size());
+
+    
+    for (int i = 0; i < _model.materials.size(); ++i )
     {
+        const auto& material = _model.materials[i];
         auto mat = Material(overrideShader);
         auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
@@ -82,7 +91,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             glm::ivec2 size(512, 512);
             texData.assign(size.x * size.y * 3, 255);
             auto tex = Texture(texData, size, GL_RGB8, GL_RGB);
-            _textures.push_back(std::move(tex));
+            _textures.push_back( std::move(tex));
             mat.setUniform(loc, &_textures.back());
         }
 
@@ -168,13 +177,22 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             }
         }
 
-        _materials.push_back(std::move(mat));
+        _materials[i] = std::move(mat);
     }
 
+    int primitiveCount = 0;
+    for (const auto& mesh : _model.meshes)
+    {
+        primitiveCount += mesh.primitives.size();
+    }
+
+    _geometries.resize(primitiveCount);
+    _meshes.resize(primitiveCount);
+
+    int currPrim = 0;
     for (const auto& mesh : _model.meshes)
     {
         MeshGroup meshGroup;
-
         for (const auto& primitive : mesh.primitives)
         {
             Geometry::VertexData vBuffers;
@@ -201,6 +219,10 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
 
                     vBuffers.push_back(std::make_pair(vData, layout));
                 }
+                else
+                {
+                    printf("did not find attribute %s \n", attribute.first);
+                }
             }
 
             const auto& idxAccessor = _model.accessors[primitive.indices];
@@ -222,13 +244,16 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             }
 
             auto geo = Geometry(vBuffers, iBuffer);
-            _geometries.push_back(std::move(geo));
+            _geometries[currPrim] = std::move(geo);
 
-            auto m = Mesh( &_geometries.back(), &_materials[primitive.material]);
-            meshGroup.push_back(std::move(m));
+            auto m = Mesh(&_geometries[currPrim], &_materials[primitive.material]);
+            _meshes[currPrim] = std::move(m);
+
+            meshGroup.push_back(&_meshes[currPrim]);
+            ++currPrim;
         }
-    
         _meshGroups.push_back(std::move(meshGroup));
+        
     }
 
     const auto& scene = _model.scenes[_model.defaultScene];
@@ -310,7 +335,7 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
     {
         for (auto& mesh : _meshGroups[node.mesh])
         {
-            mesh.render(mtx);
+            mesh->render(mtx);
         }
     }
 

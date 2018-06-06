@@ -70,8 +70,9 @@ void App::init()
 
     _modelMtx =  glm::scale(glm::mat4_cast(_modelRot), _modelScale);
 
-    GLTFModel::loadFromFile(&_gltfModel, "resources/models/venus_de_milo/scene.gltf", &program);
-    _gltfModel.setMatrix( _modelMtx );
+    _gltfModel = std::make_unique<GLTFModel>();
+    GLTFModel::loadFromFile(_gltfModel.get(), "resources/models/venus_de_milo/scene.gltf", &program);
+    _gltfModel->setMatrix( _modelMtx );
 
     //_gltfModel.setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
@@ -96,7 +97,7 @@ void App::render()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _gltfModel.render();
+    _gltfModel->render();
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
@@ -107,13 +108,13 @@ void App::render()
 
     _composeMesh.render();
 
-#ifdef _DEBUG
-    GLenum er = glGetError();
-    if (er != 0)
-    {
-        printf("error: %d \n", er);
-    }
-#endif
+//#ifdef _DEBUG
+//    GLenum er = glGetError();
+//    if (er != 0)
+//    {
+//        printf("error: %d \n", er);
+//    }
+//#endif
 }
 
 void App::update(double dt)
@@ -125,7 +126,7 @@ void App::update(double dt)
         
         _modelMtx = glm::scale(glm::mat4_cast(_modelRot), _modelScale);
 
-        _gltfModel.setMatrix(_modelMtx);
+        _gltfModel->setMatrix(_modelMtx);
     }
 }
 
@@ -142,6 +143,7 @@ void App::resize(const glm::ivec2 & size)
     _globalUniformBlock.setValue("projection", &projection, sizeof(glm::mat4));
     _globalUniformBlock.uploadData();
 
+    _colorScreenTextures.clear();
     _colorScreenTextures.push_back(Texture( size, GL_RGBA8, GL_RGBA));
     _colorScreenTextures.push_back(Texture( size, GL_RGBA32F, GL_RGBA, GL_FLOAT));
     _colorScreenTextures.push_back(Texture(size, GL_RGBA8, GL_RGBA));

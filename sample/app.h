@@ -23,6 +23,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <memory>
+
 using namespace jkps::gl;
 
 struct GlobalUniforms
@@ -63,7 +65,7 @@ private:
 
     Mesh boxMesh;
 
-    GLTFModel _gltfModel;
+    std::unique_ptr<GLTFModel> _gltfModel;
     glm::mat4 _modelMtx;
     glm::quat _modelRot;
     glm::vec3 _modelScale;

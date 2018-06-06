@@ -46,13 +46,14 @@ namespace jkps
             void renderTreeFromNode(int nId, const glm::mat4& parentMtx );
 
         private:
-            typedef std::vector<Mesh> MeshGroup;
+            typedef std::vector<Mesh*> MeshGroup;
 
             glm::mat4 _matrix;
             tinygltf::Model _model;
             PbrUniforms _pbr;
            
             std::vector<MeshGroup> _meshGroups;
+            std::vector<Mesh> _meshes;
             std::vector<Geometry> _geometries;
             std::vector<Material> _materials;
             std::vector<Texture> _textures;
