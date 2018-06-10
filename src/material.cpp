@@ -45,6 +45,11 @@ jkps::gl::MaterialUniformBlock::MaterialUniformBlock(MaterialUniformBlock && uni
 
 MaterialUniformBlock& jkps::gl::MaterialUniformBlock::operator=(MaterialUniformBlock && uniformBlock)
 {
+    if (_valid)
+    {
+        glDeleteBuffers(1, &_ubo);
+    }
+
     _ubo = uniformBlock._ubo;
     _descriptor = uniformBlock._descriptor;
     _buffer = std::move(uniformBlock._buffer);

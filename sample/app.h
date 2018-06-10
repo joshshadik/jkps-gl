@@ -51,36 +51,37 @@ public:
     void resize(const glm::ivec2& size);
 
 private:
-    Shader vs;
-    Shader fs;
+    Shader* vs;
+    Shader* fs;
 
-    Shader composeVS;
-    Shader composeFS;
+    Shader* composeVS;
+    Shader* composeFS;
 
-    ShaderProgram program;
-    ShaderProgram composeProgram;
+    ShaderProgram* program;
+    ShaderProgram* composeProgram;
 
-    Material material;
-    Geometry _quadGeo;
+    Material* material;
+    Geometry* _quadGeo;
 
-    Mesh boxMesh;
+    Mesh* boxMesh;
 
-    std::unique_ptr<GLTFModel> _gltfModel;
+    GLTFModel _gltfModel;
     glm::mat4 _modelMtx;
     glm::quat _modelRot;
     glm::vec3 _modelScale;
+    glm::vec3 _modelPos;
 
-    Framebuffer _screenBuffer;
+    Framebuffer* _screenBuffer;
 
-    Material _composeMaterial;
-    Mesh _composeMesh;
+    Material* _composeMaterial;
+    Mesh* _composeMesh;
 
     glm::ivec2 _screenSize;
 
     GlobalUniforms _gUniforms;
-    MaterialUniformBlock _globalUniformBlock;
-    std::vector<Texture> _colorScreenTextures;
-    Texture _depthTexture;
+    MaterialUniformBlock* _globalUniformBlock;
+    std::vector<Texture*> _colorScreenTextures;
+    Texture* _depthTexture;
 
     Controls* _controls;
 };

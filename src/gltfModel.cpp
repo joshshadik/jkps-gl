@@ -1,5 +1,7 @@
 #include "gltfModel.h"
 
+#include "resourceManager.h"
+
 using namespace jkps::gl;
 
 bool loadImageData(tinygltf::Image*, std::string*, int, int, const unsigned char*, int, void*) {
@@ -45,8 +47,7 @@ int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::
 GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     : _model(std::move(model))
 {
-    _textures.reserve(32);
-    _textures.resize(_model.images.size());
+    _textures.reserve(_model.images.size());
     for (int i = 0; i < _model.images.size(); ++i)
     {
         const auto& image = _model.images[i];
@@ -64,52 +65,51 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             layout = GL_RGBA;
             break;
         }
-        auto tex = Texture(image.image, glm::ivec2(image.width, image.height), format, layout);
-        _textures[i] = std::move(tex);
+        auto tex = ResourceManager::getNextTexture();
+        *tex = Texture(image.image, glm::ivec2(image.width, image.height), format, layout);
+        _textures.push_back(tex);
     }
-
-    _ubos.resize(_model.materials.size());
-    _materials.resize(_model.materials.size());
-
     
     for (int i = 0; i < _model.materials.size(); ++i )
     {
         const auto& material = _model.materials[i];
-        auto mat = Material(overrideShader);
+        auto mat = ResourceManager::getNextMaterial();
+        *mat = Material(overrideShader);
         auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
         int diffIndex = getTextureIndex(material, pbrExt, "baseColorTexture", "diffuseTexture");
-        auto loc = mat.getUniformLocation("uDiffuse");
+        auto loc = mat->getUniformLocation("uDiffuse");
 
         if (diffIndex >= 0)
         {        
-            mat.setUniform(loc, &_textures[diffIndex]);
+            mat->setUniform(loc, _textures[diffIndex]);
         }
         else
         {
             std::vector<uint8_t> texData;
             glm::ivec2 size(512, 512);
             texData.assign(size.x * size.y * 3, 255);
-            auto tex = Texture(texData, size, GL_RGB8, GL_RGB);
-            _textures.push_back( std::move(tex));
-            mat.setUniform(loc, &_textures.back());
+            auto tex = ResourceManager::getNextTexture();
+            *tex = Texture(texData, size, GL_RGB8, GL_RGB);
+            _textures.push_back( tex);
+            mat->setUniform(loc, tex);
         }
 
         int normalIndex = getTextureIndex(material, pbrExt, "normalTexture", "normalTexture");
-        auto nLoc = mat.getUniformLocation("uNormalTex");
+        auto nLoc = mat->getUniformLocation("uNormalTex");
 
         if (normalIndex >= 0)
         {
-            mat.setUniform(nLoc, &(_textures[normalIndex]));
+            mat->setUniform(nLoc, (_textures[normalIndex]));
         }
 
 
         int occIndex = getTextureIndex(material, pbrExt, "occlusionTexture", "occlusionTexture");
-        auto oLoc = mat.getUniformLocation("uOcclusionTex");
+        auto oLoc = mat->getUniformLocation("uOcclusionTex");
 
         if (occIndex >= 0)
         {
-            mat.setUniform(oLoc, &_textures[occIndex]);
+            mat->setUniform(oLoc, _textures[occIndex]);
         }
 
         glm::vec4 diffuseFactorColor{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -123,8 +123,8 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             sizeof(glm::vec4) + sizeof(float) * 4
         };
 
-
-        auto ubo = MaterialUniformBlock(pbrDescriptor);
+        auto ubo = ResourceManager::getNextUniformBlock();
+        *ubo = MaterialUniformBlock(pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
         {          
@@ -157,13 +157,12 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
 
         printf("diffuse color factor: %f, %f, %f, %f \n", diffuseFactorColor[0], diffuseFactorColor[1], diffuseFactorColor[2], diffuseFactorColor[3]);
 
-        ubo.setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
-        ubo.uploadData();
+        ubo->setValue(diffuseFactorKey, &diffuseFactorColor, sizeof(diffuseFactorColor));
+        ubo->uploadData();
 
-        _ubos.push_back(std::move(ubo));
         GLint pbrLoc = overrideShader->getUniformBlockLocation("PBR");
         printf("pbr loc: %d \n", pbrLoc);
-        mat.addUniformBlock(1, pbrLoc, &_ubos.back());
+        mat->addUniformBlock(1, pbrLoc, ubo);
 
         auto alphaMode = material.additionalValues.find("alphaMode");
         if (alphaMode != material.additionalValues.end())
@@ -172,12 +171,12 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
 
             if (mode == "BLEND")
             {
-                mat.setBlended(true);
-                mat.setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                mat->setBlended(true);
+                mat->setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
         }
 
-        _materials[i] = std::move(mat);
+        _materials.push_back(mat);
     }
 
     int primitiveCount = 0;
@@ -186,8 +185,8 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         primitiveCount += mesh.primitives.size();
     }
 
-    _geometries.resize(primitiveCount);
-    _meshes.resize(primitiveCount);
+    //_geometries.resize(primitiveCount);
+    //_meshes.resize(primitiveCount);
 
     int currPrim = 0;
     for (const auto& mesh : _model.meshes)
@@ -243,13 +242,13 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 std::copy_n(reinterpret_cast<const uint32_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
 
-            auto geo = Geometry(vBuffers, iBuffer);
-            _geometries[currPrim] = std::move(geo);
+            auto geo = ResourceManager::getNextGeometry();
+            *geo = Geometry(vBuffers, iBuffer);
 
-            auto m = Mesh(&_geometries[currPrim], &_materials[primitive.material]);
-            _meshes[currPrim] = std::move(m);
+            auto m = ResourceManager::getNextMesh();
+            *m = Mesh(geo, _materials[primitive.material]);
 
-            meshGroup.push_back(&_meshes[currPrim]);
+            meshGroup.push_back(m);
             ++currPrim;
         }
         _meshGroups.push_back(std::move(meshGroup));

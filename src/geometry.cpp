@@ -62,6 +62,14 @@ jkps::gl::Geometry::Geometry(Geometry && geo)
 
 Geometry& jkps::gl::Geometry::operator=(Geometry && geo)
 {
+    if (_valid)
+    {
+        glDeleteVertexArrays(1, &_vao);
+
+        glDeleteBuffers(_vbos.size(), _vbos.data());
+        glDeleteBuffers(1, &_ibo);
+    }
+
     _vertexData = std::move(geo._vertexData);
     _indices = std::move(geo._indices);
     _elementCount = geo._elementCount;
@@ -85,7 +93,7 @@ void Geometry::render()
     glDrawElements(GL_TRIANGLES, _elementCount, GL_UNSIGNED_INT, NULL);
 }
 
-VertexLayout::VertexLayout(const std::vector<VertexAttribute>&& attributes, const uint16_t stride)
+VertexLayout::VertexLayout(std::vector<VertexAttribute>&& attributes, const uint16_t stride)
     : _attributes(attributes)
     , _stride(stride)
 {
@@ -100,7 +108,7 @@ void VertexLayout::bind()
 {
     for (int aa = 0; aa < _attributes.size(); ++aa)
     {
-        glVertexAttribPointer(_attributes[aa]._index, _attributes[aa]._size, GL_FLOAT, GL_FALSE, _stride, (void*)(_attributes[aa]._offset));
-        glEnableVertexAttribArray(_attributes[aa]._index);
+        glVertexAttribPointer(_attributes.begin()[aa]._index, _attributes.begin()[aa]._size, GL_FLOAT, GL_FALSE, _stride, (void*)(_attributes.begin()[aa]._offset));
+        glEnableVertexAttribArray(_attributes.begin()[aa]._index);
     }
 }

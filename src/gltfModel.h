@@ -53,11 +53,9 @@ namespace jkps
             PbrUniforms _pbr;
            
             std::vector<MeshGroup> _meshGroups;
-            std::vector<Mesh> _meshes;
-            std::vector<Geometry> _geometries;
-            std::vector<Material> _materials;
-            std::vector<Texture> _textures;
-            std::vector<MaterialUniformBlock> _ubos;
+
+            std::vector<Material*> _materials;
+            std::vector<Texture*> _textures;
         };
 
     }
