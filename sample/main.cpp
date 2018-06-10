@@ -14,9 +14,12 @@
 #include "app.h"
 #include "controls.h"
 
+#include "resourceManager.h"
+
 GLFWwindow* window;
 static App app;
 
+ResourceManager resourceManager;
 Controls controls;
 
 glm::ivec2 size = glm::ivec2(1280, 720);
@@ -69,6 +72,7 @@ int main(void)
 {
     //App app;
 
+    printf("app size: %d bytes \n", sizeof(App));
 
     /* Initialize the library */
     if (!glfwInit())

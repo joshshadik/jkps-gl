@@ -75,6 +75,11 @@ Shader::Shader(Shader&& shader)
 
 Shader& Shader::operator=(Shader&& shader)
 {
+    if (_type != Invalid)
+    {
+        glDeleteShader(_shaderID);
+    }
+
     _type = shader._type;
     _shaderID = shader._shaderID;
 
@@ -173,6 +178,14 @@ jkps::gl::ShaderProgram::ShaderProgram(ShaderProgram&& program)
 
 ShaderProgram& ShaderProgram::operator=(ShaderProgram&& program)
 {
+    if (_valid)
+    {
+        for (auto shader : _shaders)
+        {
+            shader->detach(_programID);
+        }
+    }
+
     _programID = program._programID;
     _shaders = std::move(program._shaders);
 

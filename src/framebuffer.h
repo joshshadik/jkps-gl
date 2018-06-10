@@ -19,14 +19,14 @@ namespace jkps
         class Framebuffer
         {
         public:
-            Framebuffer(std::vector<Texture>* color, Texture* depth, const glm::ivec2& size);
+            Framebuffer(std::vector<Texture*> color, Texture* depth, const glm::ivec2& size);
             Framebuffer();
             ~Framebuffer();
 
             Framebuffer(Framebuffer&& fb);
             Framebuffer& operator=(Framebuffer&& fb);
 
-            Texture* color(int index = 0) { return &_color->at(index); }
+            Texture* color(int index = 0) { return _color.at(index); }
             Texture* depth() { return _depth; }
             GLuint id() { return _fboId; }
 
@@ -41,7 +41,7 @@ namespace jkps
             GLuint _fboId;
 
             glm::ivec2 _size;
-            std::vector<Texture>* _color;
+            std::vector<Texture*> _color;
             Texture* _depth;
 
             bool _valid = false;

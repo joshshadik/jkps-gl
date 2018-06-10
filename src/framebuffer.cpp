@@ -3,7 +3,7 @@
 
 using namespace jkps::gl;
 
-jkps::gl::Framebuffer::Framebuffer(std::vector<Texture>* color, Texture * depth, const glm::ivec2 & size)
+jkps::gl::Framebuffer::Framebuffer(std::vector<Texture*> color, Texture* depth, const glm::ivec2 & size)
 {
     glGenFramebuffers(1, &_fboId);
     _color = color;
@@ -11,9 +11,9 @@ jkps::gl::Framebuffer::Framebuffer(std::vector<Texture>* color, Texture * depth,
     _size = size;
 
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
-    for (int i = 0; i < _color->size(); ++i)
+    for (int i = 0; i < _color.size(); ++i)
     {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, _color->at(i).id(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, _color.at(i)->id(), 0);
     }
 
     if (_depth)
@@ -48,6 +48,11 @@ jkps::gl::Framebuffer::Framebuffer(Framebuffer && fb)
 
 Framebuffer& jkps::gl::Framebuffer::operator=(Framebuffer && fb)
 {
+    if (_valid)
+    {
+        glDeleteFramebuffers(1, &_fboId);
+    }
+
     _fboId = fb._fboId;
     _size = fb._size;
     _color = std::move(fb._color);
@@ -65,7 +70,7 @@ void jkps::gl::Framebuffer::bind()
     glViewport(0, 0, _size.x, _size.y);
 
     std::vector<GLenum> attachments;
-    for (int i = 0; i < _color->size(); ++i )
+    for (int i = 0; i < _color.size(); ++i )
     {
         attachments.push_back((GLenum)(GL_COLOR_ATTACHMENT0 + i));
     }

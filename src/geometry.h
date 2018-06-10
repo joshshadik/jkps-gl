@@ -32,7 +32,7 @@ namespace jkps
                 uint16_t _offset;
             };
 
-            VertexLayout(const std::vector<VertexAttribute>&& attributes, const uint16_t stride);
+            VertexLayout(std::vector<VertexAttribute>&& attributes, const uint16_t stride);
             VertexLayout();
 
             void bind();
@@ -40,6 +40,8 @@ namespace jkps
         private:
             uint16_t _stride;
             std::vector<VertexAttribute> _attributes;
+            //VertexAttribute* _attributes;
+            //size_t _attributeCount;
         };
 
         class Geometry

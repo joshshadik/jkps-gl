@@ -51,6 +51,11 @@ jkps::gl::Texture::Texture(Texture && tex)
 
 Texture & jkps::gl::Texture::operator=(Texture && tex)
 {
+    if (_valid)
+    {
+        glDeleteTextures(1, &_textureID);
+    }
+
     _textureID = tex._textureID;
     _valid = tex._valid;
     tex._valid = false;
