@@ -220,7 +220,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 }
                 else
                 {
-                    printf("did not find attribute %s \n", attribute.first);
+                    printf("did not find attribute %s \n", attribute.first.c_str());
                 }
             }
 
