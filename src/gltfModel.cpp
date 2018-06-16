@@ -124,7 +124,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         };
 
         auto ubo = ResourceManager::getNextUniformBlock();
-        *ubo = MaterialUniformBlock(pbrDescriptor);
+        *ubo = MaterialUniformBlock( pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
         {          

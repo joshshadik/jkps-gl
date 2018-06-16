@@ -20,8 +20,8 @@ namespace jkps
         class Texture
         {
         public:
-            Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE);
-            Texture(const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE);
+            Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE, GLint magFilter = GL_LINEAR, GLint minFilter = GL_LINEAR);
+            Texture(const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE, GLint magFilter = GL_LINEAR, GLint minFilter = GL_LINEAR);
             Texture();
             ~Texture();
             Texture(Texture&& tex);

@@ -79,6 +79,7 @@ namespace jkps
             typedef std::pair<std::vector<std::pair<std::string, uint32_t>>, size_t> Descriptor;
 
         public:
+            MaterialUniformBlock(uint8_t* buffer,  const Descriptor& descriptor);
             MaterialUniformBlock(const Descriptor& descriptor);
             MaterialUniformBlock();
             ~MaterialUniformBlock();
@@ -99,6 +100,8 @@ namespace jkps
 
             Descriptor _descriptor;
             std::vector<uint8_t> _buffer;
+            uint8_t* _bufPtr;
+			size_t _bufferSize;
             std::map<std::string, uint32_t> _offsets;
 
             bool _valid = true;
@@ -121,6 +124,8 @@ namespace jkps
             void setUniform(GLint location, const glm::vec4& value);
             void setUniform(GLint location, const glm::vec3& value);
             void setUniform(GLint location, const glm::vec2& value);
+            void setUniform(GLint location, const float value);
+            void setUniform(GLint location, const int value);
             void setUniform(GLint location, Texture* tex);
 
             void setBlended(bool blend) { _blended = blend; }

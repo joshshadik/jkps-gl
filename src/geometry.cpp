@@ -88,9 +88,16 @@ void Geometry::bind()
     glBindVertexArray(_vao);
 }
 
-void Geometry::render()
+void Geometry::render(uint32_t instanceCount)
 {
-    glDrawElements(GL_TRIANGLES, _elementCount, GL_UNSIGNED_INT, NULL);
+    if (instanceCount > 1)
+    {
+        glDrawElementsInstanced(GL_TRIANGLES, _elementCount, GL_UNSIGNED_INT, NULL, instanceCount);
+    }
+    else
+    {
+        glDrawElements(GL_TRIANGLES, _elementCount, GL_UNSIGNED_INT, NULL);
+    }
 }
 
 VertexLayout::VertexLayout(std::vector<VertexAttribute>&& attributes, const uint16_t stride)

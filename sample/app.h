@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "framebuffer.h"
 #include "gltfModel.h"
+#include "particleSystem.h"
 
 #include "controls.h"
 
@@ -84,4 +85,8 @@ private:
     Texture* _depthTexture;
 
     Controls* _controls;
+
+    jkps::engine::ParticleSystem _sprayParticles;
+    Material* _sprayMaterial;
+
 };

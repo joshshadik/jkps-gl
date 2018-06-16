@@ -58,7 +58,7 @@ namespace jkps
 
             void bind();
 
-            void render();
+            void render(uint32_t instanceCount = 1);
 
         private:
             Geometry(const Geometry&) = delete;

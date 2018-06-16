@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include "resourceManager.h"
+#include "primitives.h"
 
 #include <vector>
 
@@ -8,41 +9,11 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+
 void App::init()
 {
-    printf("app version %f \n", 0.01f);
-    std::vector<float> quadVertices{
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-    };
-
-    std::vector<float> quadTexcoords{
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f
-    };
-
-    std::vector<uint32_t> quadVertexIndices{
-        0, 1, 2,
-        0, 2, 3
-    };
-
-
-    VertexLayout vertLayout{
-        { VertexLayout::VertexAttribute(Shader::StandardAttrLocations["POSITION"], 3, 0) },
-        3 * sizeof(GLfloat)
-    };
-    VertexLayout texcoordLayout{
-        { VertexLayout::VertexAttribute(Shader::StandardAttrLocations["TEXCOORD_0"], 2, 0)},
-        2 * sizeof(GLfloat)
-    };
-
-    Geometry::VertexData vertexData = { std::make_pair(quadVertices, vertLayout), std::make_pair(quadTexcoords, texcoordLayout) };
-    _quadGeo = ResourceManager::getNextGeometry();
-    *_quadGeo = Geometry(vertexData, quadVertexIndices);
+    Primitives::init();
+    _quadGeo = Primitives::quad();
 
     auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
     auto projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
@@ -88,6 +59,38 @@ void App::init()
 
     //_gltfModel.setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
+    Shader* sprayUpdateVS = ResourceManager::getNextShader();
+    Shader* sprayUpdateFS = ResourceManager::getNextShader();
+    Shader* sprayRenderVS = ResourceManager::getNextShader();
+    Shader* sprayRenderFS = ResourceManager::getNextShader();
+
+    Shader::loadFromFile(sprayUpdateVS, "resources/shaders/screen.vs", Shader::Vertex);
+    Shader::loadFromFile(sprayUpdateFS, "resources/shaders/spray/pos-vel.fs", Shader::Fragment);
+    Shader::loadFromFile(sprayRenderVS, "resources/shaders/spray/particle.vs", Shader::Vertex);
+    Shader::loadFromFile(sprayRenderFS, "resources/shaders/spray/particle.fs", Shader::Fragment);
+
+    ShaderProgram* updateProgram = ResourceManager::getNextShaderProgram();
+    ShaderProgram* sprayProgram = ResourceManager::getNextShaderProgram();
+    Material* updateMaterial = ResourceManager::getNextMaterial();
+    _sprayMaterial = ResourceManager::getNextMaterial();
+
+    *updateProgram = ShaderProgram(sprayUpdateVS, sprayUpdateFS);
+    *sprayProgram = ShaderProgram(sprayRenderVS, sprayRenderFS);
+    *updateMaterial = Material(updateProgram);
+    *_sprayMaterial = Material(sprayProgram);
+
+    _sprayParticles.init(Primitives::quad(), _sprayMaterial, updateMaterial, 64);
+    int diffLoc = _sprayMaterial->getUniformLocation("diffuseColor");
+    _sprayMaterial->setUniform(diffLoc, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    
+
+    _sprayParticles.lifetime(0.5f);
+    _sprayParticles.direction(glm::vec3(1.0f, 1.0f, -1.0f));
+    _sprayParticles.magnitude(20.0f);
+    _sprayParticles.randomness(0.1f);
+    _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, 0.5f));
+
+
     composeVS = ResourceManager::getNextShader();
     composeFS = ResourceManager::getNextShader();
 
@@ -97,8 +100,6 @@ void App::init()
     composeProgram = ResourceManager::getNextShaderProgram();
     _composeMaterial = ResourceManager::getNextMaterial();
     _composeMesh = ResourceManager::getNextMesh();
-
-
 
     *composeProgram = ShaderProgram(composeVS, composeFS);
     *_composeMaterial = Material(composeProgram);
@@ -120,11 +121,18 @@ void App::init()
 
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uLightDirection"), glm::normalize(glm::vec3(0.0, -1.0, -1.0)));
 
+
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 
-
+#ifdef _DEBUG
+    GLenum er = glGetError();
+    if (er != 0)
+    {
+        printf("error: %d \n", er);
+    }
+#endif
 }
 
 void App::render()
@@ -135,6 +143,8 @@ void App::render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     _gltfModel.render();
+
+    _sprayParticles.render();
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
@@ -165,6 +175,16 @@ void App::update(double dt)
 
         _gltfModel.setMatrix(_modelMtx);
     }
+
+    _sprayParticles.update(dt);
+
+#ifdef _DEBUG
+    GLenum er = glGetError();
+    if (er != 0)
+    {
+        printf("error: %d \n", er);
+    }
+#endif
 }
 
 void App::setControls(Controls * controls)
@@ -189,7 +209,8 @@ void App::resize(const glm::ivec2 & size)
 
     *_screenBuffer = Framebuffer(_colorScreenTextures, _depthTexture, size);
 
-
-
     Framebuffer::bindDefault();
+
+     int loc = _sprayMaterial->getUniformLocation("screenSize");
+    _sprayMaterial->setUniform(loc, glm::vec2(_screenSize));
 }
