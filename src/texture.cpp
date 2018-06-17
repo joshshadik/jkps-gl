@@ -6,13 +6,13 @@
 
 using namespace jkps::gl;
 
-Texture::Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType)
+Texture::Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
 {
     glGenTextures(1, &_textureID);
     bind();
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -22,8 +22,8 @@ Texture::Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuin
     unbind();
 }
 
-jkps::gl::Texture::Texture(const glm::ivec2 & size, GLuint format, GLuint layout, GLenum dataType)
-    :Texture({}, size, format, layout, dataType)
+jkps::gl::Texture::Texture(const glm::ivec2 & size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
+    :Texture({}, size, format, layout, dataType, magFilter, minFilter)
 {
 
 }

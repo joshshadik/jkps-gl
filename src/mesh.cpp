@@ -10,34 +10,39 @@ jkps::gl::Mesh::Mesh(Geometry* geometry, Material* material)
 
 jkps::gl::Mesh::Mesh(std::vector<Geometry*> geometries, Material* material)
     : _geometries(geometries)
-    , _material(material)
+    , _renderMaterial(material)
 {
-    _modelUniformLocation = _material->getUniformLocation("model");
+    _modelUniformLocation = _renderMaterial->getUniformLocation("model");
 }
 
 jkps::gl::Mesh::Mesh()
-    : _material(nullptr)
+    : _renderMaterial(nullptr)
 {
 
 }
 
 void jkps::gl::Mesh::render()
 {
-    _material->bind();
+    _renderMaterial->bind();
 
     for (auto geo : _geometries)
     {
         geo->bind();
-        geo->render();
+        geo->render(_instanceCount);
     }
 
-    _material->unbind();
+    _renderMaterial->unbind();
 }
 
 void jkps::gl::Mesh::render(const glm::mat4 & mtx)
 {
-    _material->setUniform(_modelUniformLocation, mtx);
+    _renderMaterial->setUniform(_modelUniformLocation, mtx);
 
     render();
+}
+
+void jkps::gl::Mesh::setInstances(uint32_t instances)
+{
+    _instanceCount = instances;
 }
 

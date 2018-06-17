@@ -21,8 +21,12 @@ void main()
 
     float d = max(dot(-uLightDirection, n.xyz), 0.0);
 
-    col.rgb *= d;
-    col.rgb = col.rgb * 0.5 + col.rgb * mro.z;
+    if(n.w > 0.0 )
+    {
+        col.rgb *= d;
+        col.rgb = col.rgb * 0.5 + col.rgb * mro.z;
+    }
+
 
     color = col;
 }
