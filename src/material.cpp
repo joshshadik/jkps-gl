@@ -116,7 +116,6 @@ void jkps::gl::MaterialUniformBlock::bind(int binding)
 void jkps::gl::MaterialUniformBlock::setValue(const std::string & key, const void * data, const size_t size)
 {
     uint32_t offset = _offsets[key];
-    printf("offset for %s: %d \n", key.c_str(), offset);
     memcpy(_bufPtr + offset, data, size);
 }
 

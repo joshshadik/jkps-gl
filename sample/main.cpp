@@ -1,3 +1,4 @@
+
 #ifdef USE_WASM
 #include <GLES3/gl3.h>
 #include <GLES3/gl3platform.h>
@@ -23,12 +24,13 @@ static ResourceManager resourceManager;
 static Controls controls;
 
 static int vrDisplay = -1;
+static bool inVR = false;
 
-static int renderLoopCalled = 0;
-static bool renderLoopArgCalled = false;
-static void* renderLoopArgArg = NULL;
+static glm::mat4 vrProjectionMatrices[2];
+static glm::mat4 vrViewMatrices[2];
 
-glm::ivec2 size = glm::ivec2(1280, 720);
+
+static glm::ivec2 size = glm::ivec2(1280, 720);
 
 double lastTime;
 
@@ -42,47 +44,6 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 {
     controls.setCursorPosition(xpos / size.x, ypos / size.y);
 }
-
-#ifdef USE_WASM
-EM_BOOL on_pointerlockchange(int eventType, const EmscriptenPointerlockChangeEvent *pointerlockChangeEvent, void *userData) {
-    printf("pointerlockchange, isActive=%d\n", pointerlockChangeEvent->isActive);
-    // This is the application-level workaround to sync HTML5 Pointer Lock with glfw cursor state.
-    if (!pointerlockChangeEvent->isActive) {
-        printf("pointerlockchange deactivated, so enabling cursor\n");
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-
-    return 0;
-}
-
-void vr_init_callback(void* userData)
-{
-    printf("Browser supports WebVR\n");
-}
-
-
-#endif
-
-
-
-void main_loop()
-{
-    double currTime = glfwGetTime();
-
-    /* Poll for and process events */
-    glfwPollEvents();
-
-    app.update(currTime - lastTime);
-    app.render();
-
-    /* Swap front and back buffers */
-    glfwSwapBuffers(window);
-
-    controls.updateStates();
-
-    lastTime = currTime;
-}
-
 
 #ifdef USE_WASM
 
@@ -99,6 +60,105 @@ void report_result(int result) {
 #endif
 }
 
+EM_BOOL on_pointerlockchange(int eventType, const EmscriptenPointerlockChangeEvent *pointerlockChangeEvent, void *userData) {
+    printf("pointerlockchange, isActive=%d\n", pointerlockChangeEvent->isActive);
+    // This is the application-level workaround to sync HTML5 Pointer Lock with glfw cursor state.
+    if (!pointerlockChangeEvent->isActive) {
+        printf("pointerlockchange deactivated, so enabling cursor\n");
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    return 0;
+}
+
+void vr_init_callback(void* userData)
+{
+    printf("Browser supports WebVR\n");
+    if (vrDisplay == -1) {
+        int numDisplays = emscripten_vr_count_displays();
+        if (numDisplays == 0) {
+            printf("No VR displays found!\n");
+            report_result(0);
+            return;
+        }
+
+        printf("%d VR displays found\n", numDisplays);
+
+        int id = -1;
+        char *devName;
+        for (int i = 0; i < numDisplays; ++i) {
+            VRDisplayHandle handle = emscripten_vr_get_display_handle(i);
+            if (vrDisplay == -1) {
+                /* Save first found display for more testing */
+                vrDisplay = handle;
+                devName = const_cast<char*>(emscripten_vr_get_display_name(handle));
+                printf("Using VRDisplay '%s' (displayId '%d')\n", devName, vrDisplay);
+
+                //VRDisplayCapabilities caps;
+                //if (!emscripten_vr_get_display_capabilities(handle, &caps)) {
+                //    printf("Error: failed to get display capabilities.\n");
+                //    report_result(1);
+                //    return;
+                //}
+                //if (!emscripten_vr_display_connected(vrDisplay)) {
+                //    printf("Error: expected display to be connected.\n");
+                //    report_result(1);
+                //    return;
+                //}
+                //printf("Display Capabilities:\n"
+                //    "{hasPosition: %d, hasExternalDisplay: %d, canPresent: %d, maxLayers: %lu}\n",
+                //    caps.hasPosition, caps.hasExternalDisplay, caps.canPresent, caps.maxLayers);
+            }
+        }
+
+        if (vrDisplay == -1) {
+            printf("Couln't find a VR display even though at least one was found.\n");
+            report_result(1);
+            return;
+        }
+    }
+}
+
+
+#endif
+
+
+
+void main_loop(bool vr = false)
+{
+    double currTime = glfwGetTime();
+
+    /* Poll for and process events */
+    glfwPollEvents();
+
+    app.update(currTime - lastTime);
+    if (vr)
+    {
+        app.overrideViewProjection(vrViewMatrices[0], vrProjectionMatrices[0]);
+        app.render(glm::ivec4(0, 0, size.x / 2, size.y));
+
+        app.overrideViewProjection(vrViewMatrices[1], vrProjectionMatrices[1]);
+        app.render(glm::ivec4(size.x / 2, 0, size.x / 2, size.y));
+    }
+    else
+    {
+        app.render(glm::ivec4(0, 0, size.x, size.y));
+    }
+    
+
+    /* Swap front and back buffers */
+    glfwSwapBuffers(window);
+
+    controls.updateStates();
+
+    lastTime = currTime;
+}
+
+
+#ifdef USE_WASM
+
+
+
 static void printMatrix(float* m) {
     printf("{%f, %f, %f, %f,\n"
         " %f, %f, %f, %f,\n"
@@ -110,73 +170,9 @@ static void printMatrix(float* m) {
         m[12], m[13], m[14], m[15]);
 }
 
-/* Render loop with an argument, set in `renderLoop()` */
-static void renderLoopArg(void* arg) {
-    emscripten_vr_cancel_display_render_loop(vrDisplay);
-
-    renderLoopArgCalled = true;
-    renderLoopArgArg = arg;
-
-    emscripten_vr_exit_present(vrDisplay);
-
-    printf("Render loop with argument was called.\n");
-
-    return;
-}
-
-static void requestPresentCallback(void* userData) {
-    // Will likely never happen as the callback is not called
-    // from a user-gesture in this test.
-    printf("Request present callback called.\n");
-}
 
 /* Render loop without argument, set in `mainLoop()` */
 static void renderLoop() {
-    renderLoopCalled++;
-    if (renderLoopCalled == 1) {
-        /* First iteration */
-        VRLayerInit init = {
-            "#canvas",
-            VR_LAYER_DEFAULT_LEFT_BOUNDS,
-            VR_LAYER_DEFAULT_RIGHT_BOUNDS
-        };
-        if (!emscripten_vr_request_present(vrDisplay, &init, 1, requestPresentCallback, NULL)) {
-            printf("Request present with default canvas failed.\n");
-            report_result(1);
-            return;
-        }
-
-        if (emscripten_vr_display_presenting(vrDisplay)) {
-            /* request present needs to be called from a user gesture callback and
-            * should have failed to make the display present. */
-            printf("Error: Expected display not to be presenting.\n");
-            report_result(1);
-            return;
-        }
-
-        VRFrameData data;
-        if (!emscripten_vr_get_frame_data(vrDisplay, &data)) {
-            printf("Could not get frame data. (first iteration)\n");
-            report_result(1);
-            return;
-        }
-        if (!emscripten_vr_submit_frame(vrDisplay)) {
-            printf("Error: Failed to submit frame to VR display %d (first iteration)\n", vrDisplay);
-            report_result(1);
-            return;
-        }
-        return;
-    }
-    else if (renderLoopCalled > 2) {
-        printf("Error: Unexpected render loop iteration\n");
-        report_result(1);
-        return; // only two iterations should run code
-    }
-
-    /* Second iteration */
-
-    emscripten_vr_cancel_display_render_loop(vrDisplay);
-
     VRFrameData data;
     if (!emscripten_vr_get_frame_data(vrDisplay, &data)) {
         printf("Could not get frame data.\n");
@@ -249,92 +245,80 @@ static void renderLoop() {
     //printf("Right View Matrix:\n");
     //printMatrix(data.rightViewMatrix);
 
-    main_loop();
+    memcpy(&vrViewMatrices[0][0], data.leftViewMatrix, 16 * sizeof(float));
+    memcpy(&vrViewMatrices[1][0], data.rightViewMatrix, 16 * sizeof(float));
+
+    memcpy(&vrProjectionMatrices[0][0], data.leftProjectionMatrix, 16 * sizeof(float));
+    memcpy(&vrProjectionMatrices[1][0], data.rightProjectionMatrix, 16 * sizeof(float));
+
+
+    //if (!emscripten_vr_submit_frame(vrDisplay)) {
+    //    printf("Error: Failed to submit frame to VR display %d (second iteration)\n", vrDisplay);
+    //    report_result(1);
+    //}
+
+    //printf("Submitted frame.\n");
+
+    main_loop(true);
 
     if (!emscripten_vr_submit_frame(vrDisplay)) {
         printf("Error: Failed to submit frame to VR display %d (second iteration)\n", vrDisplay);
         report_result(1);
     }
 
-    printf("Submitted frame.\n");
 
-    
 
-    if (!emscripten_vr_set_display_render_loop_arg(vrDisplay, renderLoopArg, (void*)42)) {
+}
+
+
+static void requestPresentCallback(void* userData) {
+    if (!emscripten_vr_set_display_render_loop(vrDisplay, renderLoop)) {
         printf("Error: Failed to dereference handle while settings display render loop of device %d\n", vrDisplay);
         report_result(1);
     }
 
-    printf("Set main loop with argument to be called next.\n");
+    inVR = true;
 }
 
-void main_loop_vr()
+static EM_BOOL presentVRButtonEvent(int eventType, const EmscriptenMouseEvent* mouseEvent, void* userData)
 {
-    static int loopcount = 0;
+    if (mouseEvent->button == 0 && vrDisplay != -1)
+    {
+        if (!inVR)
+        {
+            VRLayerInit init = {
+                NULL,
+                VR_LAYER_DEFAULT_LEFT_BOUNDS,
+                VR_LAYER_DEFAULT_RIGHT_BOUNDS
+            };
 
-    if (!emscripten_vr_ready()) {
-        printf("VR not ready\n");
-        return;
-    }
-
-    if (vrDisplay == -1) {
-        int numDisplays = emscripten_vr_count_displays();
-        if (numDisplays == 0) {
-            printf("No VR displays found!\n");
-            report_result(0);
-            return;
-        }
-
-        printf("%d VR displays found\n", numDisplays);
-
-        int id = -1;
-        char *devName;
-        for (int i = 0; i < numDisplays; ++i) {
-            VRDisplayHandle handle = emscripten_vr_get_display_handle(i);
-            if (vrDisplay == -1) {
-                /* Save first found display for more testing */
-                vrDisplay = handle;
-                devName = const_cast<char*>(emscripten_vr_get_display_name(handle));
-                printf("Using VRDisplay '%s' (displayId '%d')\n", devName, vrDisplay);
-
-                VRDisplayCapabilities caps;
-                if (!emscripten_vr_get_display_capabilities(handle, &caps)) {
-                    printf("Error: failed to get display capabilities.\n");
-                    report_result(1);
-                    return;
-                }
-                if (!emscripten_vr_display_connected(vrDisplay)) {
-                    printf("Error: expected display to be connected.\n");
-                    report_result(1);
-                    return;
-                }
-                printf("Display Capabilities:\n"
-                    "{hasPosition: %d, hasExternalDisplay: %d, canPresent: %d, maxLayers: %lu}\n",
-                    caps.hasPosition, caps.hasExternalDisplay, caps.canPresent, caps.maxLayers);
+            if (!emscripten_vr_request_present(vrDisplay, &init, 1, requestPresentCallback, NULL)) {
+                printf("Request present with default canvas failed.\n");
+                report_result(1);
+                return 0;
             }
         }
-
-        if (vrDisplay == -1) {
-            printf("Couln't find a VR display even though at least one was found.\n");
-            report_result(1);
-            return;
+        else if (inVR)
+        {
+            emscripten_vr_cancel_display_render_loop(vrDisplay);
+            emscripten_vr_exit_present(vrDisplay);
         }
+    }
 
-        VREyeParameters leftParams, rightParams;
-        emscripten_vr_get_eye_parameters(vrDisplay, VREyeLeft, &leftParams);
-        emscripten_vr_get_eye_parameters(vrDisplay, VREyeRight, &rightParams);
-
-        VREyeParameters* p = &leftParams;
-        printf("Left eye params: {offset: [%f, %f, %f], renderWidth: %lu, renderHeight: %lu}\n", p->offset.x, p->offset.y, p->offset.z, p->renderWidth, p->renderHeight);
-
-        p = &rightParams;
-        printf("Right eye params: {offset: [%f, %f, %f], renderWidth: %lu, renderHeight: %lu}\n", p->offset.x, p->offset.y, p->offset.z, p->renderWidth, p->renderHeight);
-
-        if (!emscripten_vr_set_display_render_loop(vrDisplay, renderLoop)) {
-            printf("Error: Failed to dereference handle while settings display render loop of device %d\n", vrDisplay);
-            report_result(1);
-        }
+    return 1;
 }
+
+
+void main_loop_wasm()
+{
+    if (inVR)
+    {
+
+    }
+    else
+    {
+        main_loop();
+    }
 }
 
 #endif
@@ -345,6 +329,10 @@ int main(void)
 #ifdef USE_WASM
     if (!emscripten_vr_init(vr_init_callback, NULL)) {
         printf("Browser does not support WebVR\n");
+    }
+    else
+    {
+        emscripten_set_click_callback("enterVR", nullptr, 1, presentVRButtonEvent);
     }
 #endif
 
@@ -394,7 +382,7 @@ int main(void)
 
 #ifdef USE_WASM
     emscripten_set_pointerlockchange_callback(NULL, NULL, 0, on_pointerlockchange);
-    emscripten_set_main_loop(main_loop_vr, 2, 0);
+    emscripten_set_main_loop(main_loop_wasm, 0, 1);
 #else
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))

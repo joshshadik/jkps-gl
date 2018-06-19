@@ -15,7 +15,7 @@ void App::init()
     Primitives::init();
     _quadGeo = Primitives::quad();
 
-    auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
+    auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
     auto projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
 
     MaterialUniformBlock::Descriptor globalDescriptor{
@@ -48,7 +48,7 @@ void App::init()
     boxMesh = ResourceManager::getNextMesh();
     *boxMesh = Mesh(_quadGeo, material);
 
-    _modelPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    _modelPos = glm::vec3(0.0f, 2.0f, 0.0f);
     _modelRot = glm::quat_cast(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
     _modelScale = glm::vec3(0.001f);
 
@@ -88,7 +88,7 @@ void App::init()
     _sprayParticles.direction(glm::vec3(1.0f, 1.0f, -1.0f));
     _sprayParticles.magnitude(20.0f);
     _sprayParticles.randomness(0.1f);
-    _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, 0.5f));
+    _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, -1.5f));
 
 
     composeVS = ResourceManager::getNextShader();
@@ -135,7 +135,7 @@ void App::init()
 #endif
 }
 
-void App::render()
+void App::render(const glm::ivec4& viewport)
 {
     _screenBuffer->bind();
 
@@ -148,7 +148,7 @@ void App::render()
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
-    Framebuffer::bindDefault(_screenSize);
+    Framebuffer::bindDefaultVP(viewport);
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -213,4 +213,15 @@ void App::resize(const glm::ivec2 & size)
 
      int loc = _sprayMaterial->getUniformLocation("screenSize");
     _sprayMaterial->setUniform(loc, glm::vec2(_screenSize));
+}
+
+void App::overrideViewProjection(const glm::mat4 & view, const glm::mat4 & projection)
+{
+    _gUniforms._view = view;
+    _gUniforms._projection = projection;
+
+    _globalUniformBlock->setValue("view", &view, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
+
+    _globalUniformBlock->uploadData();
 }

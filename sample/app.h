@@ -43,13 +43,15 @@ public:
 
     void init();
 
-    void render();
+    void render(const glm::ivec4& viewport);
 
     void update(double dt);
 
     void setControls(Controls* controls);
 
     void resize(const glm::ivec2& size);
+
+    void overrideViewProjection(const glm::mat4& view, const glm::mat4& projection);
 
 private:
     Shader* vs;

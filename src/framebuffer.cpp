@@ -87,3 +87,10 @@ void jkps::gl::Framebuffer::bindDefault(const glm::ivec2 & size)
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
     glViewport(0, 0, size.x, size.y);
 }
+
+void jkps::gl::Framebuffer::bindDefaultVP(const glm::ivec4 & viewport)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+    glViewport(viewport.x, viewport.y, viewport.z, viewport.w);
+}
+
