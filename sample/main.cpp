@@ -351,6 +351,8 @@ int main(void)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 #endif
 
+    glfwWindowHint(GLFW_SAMPLES, 0);
+
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(size.x, size.y, "Hello World", NULL, NULL);

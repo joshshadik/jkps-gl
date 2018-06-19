@@ -131,6 +131,8 @@ namespace jkps
             void setBlended(bool blend) { _blended = blend; }
             void setBlendFunction(GLenum src, GLenum dst) { _blendSrc = src; _blendDst = dst; }
 
+			bool isBlended() { return _blended; }
+
             void bind();
             void unbind();
 

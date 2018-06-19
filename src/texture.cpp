@@ -3,10 +3,12 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include <stb_image.h>
+#include <string>
 
 using namespace jkps::gl;
 
-Texture::Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
+Texture::Texture(const uint8_t* data, const int dataSize, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
 {
     glGenTextures(1, &_textureID);
     bind();
@@ -17,13 +19,13 @@ Texture::Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuin
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, dataType, data.size() > 0 ? data.data() : GL_NONE);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0, layout, dataType, dataSize > 0 ? data : GL_NONE);
 
     unbind();
 }
 
 jkps::gl::Texture::Texture(const glm::ivec2 & size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
-    :Texture({}, size, format, layout, dataType, magFilter, minFilter)
+    :Texture(nullptr, 0, size, format, layout, dataType, magFilter, minFilter)
 {
 
 }
@@ -71,4 +73,15 @@ void Texture::bind()
 void Texture::unbind()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void jkps::gl::Texture::loadFromFile(Texture * texture, const std::string & filePath, int channels)
+{
+	int width, height, bpp;
+	unsigned char* rgb = stbi_load(filePath.c_str(), &width, &height, &bpp, channels);
+
+	*texture = Texture(rgb, width*height*channels, glm::ivec2(width, height), GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, GL_LINEAR, GL_LINEAR);
+
+
+	stbi_image_free(rgb);
 }
