@@ -15,19 +15,18 @@ void App::init()
     Primitives::init();
     _quadGeo = Primitives::quad();
 
-    auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
-    auto projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
+	_gUniforms.view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
+	_gUniforms.projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
+	_gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
 
     MaterialUniformBlock::Descriptor globalDescriptor{
-        {{"view", 0}, {"projection", sizeof(glm::mat4)}},
-        sizeof(glm::mat4) * 2
+		{{"view", 0}, {"projection", sizeof(glm::mat4)}, {"invVP", sizeof(glm::mat4) * 2} },
+        sizeof(glm::mat4) * 3
     };
 
     _globalUniformBlock = ResourceManager::getNextUniformBlock();
 
-    *_globalUniformBlock = MaterialUniformBlock(globalDescriptor);
-    _globalUniformBlock->setValue("view", &view, sizeof(glm::mat4));
-    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
+    *_globalUniformBlock = MaterialUniformBlock(reinterpret_cast<uint8_t*>(&_gUniforms), globalDescriptor);
 
     _globalUniformBlock->uploadData();
 
@@ -36,8 +35,8 @@ void App::init()
     vs = ResourceManager::getNextShader();
     fs = ResourceManager::getNextShader();
 
-    Shader::loadFromFile(vs, "resources/shaders/standard.vs", Shader::Vertex); //std::make_shared<Shader>(vsSrc, Shader::Vertex);
-    Shader::loadFromFile(fs, "resources/shaders/standard.fs", Shader::Fragment); //std::make_shared<Shader>(fsSrc, Shader::Fragment);
+    Shader::loadFromFile(vs, "resources/shaders/standard.vs", Shader::Vertex); 
+    Shader::loadFromFile(fs, "resources/shaders/standard.fs", Shader::Fragment); 
 
     program = ResourceManager::getNextShaderProgram();
     *program = ShaderProgram(vs, fs);
@@ -79,12 +78,14 @@ void App::init()
     *updateMaterial = Material(updateProgram);
     *_sprayMaterial = Material(sprayProgram);
 
-    _sprayParticles.init(Primitives::quad(), _sprayMaterial, updateMaterial, 64);
+    _sprayParticles.init(Primitives::quad(), _sprayMaterial, updateMaterial, 128);
     int diffLoc = _sprayMaterial->getUniformLocation("diffuseColor");
-    _sprayMaterial->setUniform(diffLoc, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    _sprayMaterial->setUniform(diffLoc, glm::vec4(1.0f, 0.0f, 0.0f, 0.25f));
+	_sprayMaterial->setBlended(true);
+	_sprayMaterial->setBlendFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
 
-    _sprayParticles.lifetime(0.5f);
+    _sprayParticles.lifetime(4.0f);
     _sprayParticles.direction(glm::vec3(1.0f, 1.0f, -1.0f));
     _sprayParticles.magnitude(20.0f);
     _sprayParticles.randomness(0.1f);
@@ -118,6 +119,13 @@ void App::init()
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uPositionTex"), _colorScreenTextures[1]);
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uNormalTex"), _colorScreenTextures[2]);
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uMetalRoughOccTex"), _colorScreenTextures[3]);
+	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uDepthTex"), _depthTexture);
+
+	Texture* sky = ResourceManager::getNextTexture();
+
+	Texture::loadFromFile(sky, "resources/textures/241-sky.png", 3);
+
+	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uSkyTex"), sky);
 
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uLightDirection"), glm::normalize(glm::vec3(0.0, -1.0, -1.0)));
 
@@ -139,21 +147,26 @@ void App::render()
 {
     _screenBuffer->bind();
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _gltfModel.render();
+    _gltfModel.render(GLTFModel::Layer::Opaque);
 
-    _sprayParticles.render();
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
     Framebuffer::bindDefault(_screenSize);
 
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glDepthFunc(GL_ALWAYS);
     _composeMesh->render();
+	glDepthFunc(GL_LEQUAL);
+
+
+	_gltfModel.render(GLTFModel::Layer::Transparent);
+
+	_sprayParticles.render();
 
 #ifdef _DEBUG
     GLenum er = glGetError();
@@ -169,11 +182,16 @@ void App::update(double dt)
     if (_controls->buttonHeld(Controls::MOUSE_LEFT))
     {
         float rotAmount = _controls->deltaMousePos().x * 90.0f * (float)dt;
-        _modelRot = glm::angleAxis(rotAmount, glm::vec3(0.0, 1.0, 0.0)) * _modelRot;
-        
-        _modelMtx = glm::scale(glm::translate(glm::mat4_cast(_modelRot), _modelPos), _modelScale);
 
-        _gltfModel.setMatrix(_modelMtx);
+		_gUniforms.view = glm::rotate(_gUniforms.view, rotAmount, glm::vec3(0.0, 1.0, 0.0));
+
+		_gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
+
+		_globalUniformBlock->uploadData();
+
+        //_modelRot = glm::angleAxis(rotAmount, glm::vec3(0.0, 1.0, 0.0)) * _modelRot;
+        //_modelMtx = glm::scale(glm::translate(glm::mat4_cast(_modelRot), _modelPos), _modelScale);
+        //_gltfModel.setMatrix(_modelMtx);
     }
 
     _sprayParticles.update(dt);

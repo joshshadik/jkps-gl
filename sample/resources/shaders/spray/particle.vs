@@ -8,6 +8,7 @@ uniform Common
 {
 	mat4 view;
 	mat4 projection;
+	mat4 invVP;
 };
 
 uniform mat4 model;

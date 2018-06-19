@@ -37,16 +37,28 @@ namespace jkps
             GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader);
             static bool loadFromFile( GLTFModel* model, const std::string&& filename, ShaderProgram* overrideShader);
 
-            void render();
+            void render(int layerFlags = ~0);
             void setMatrix(const glm::mat4& mtx) { _matrix = mtx; }
+
+			enum Layer
+			{
+				Opaque = 1,
+				Transparent = 2
+			};
 
         private:
             void importNode(const tinygltf::Node& node);
 
-            void renderTreeFromNode(int nId, const glm::mat4& parentMtx );
+            void renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags);
 
         private:
-            typedef std::vector<Mesh*> MeshGroup;
+            typedef std::pair<std::vector<Mesh*>, Layer> MeshGroup;
+
+			//struct MeshGroup
+			//{
+			//	std::vector<Mesh*> _meshes;
+
+			//};
 
             glm::mat4 _matrix;
             tinygltf::Model _model;
