@@ -15,18 +15,25 @@ void App::init()
     Primitives::init();
     _quadGeo = Primitives::quad();
 
-	_gUniforms.view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
-	_gUniforms.projection = glm::perspective(1.2f, 1.0f, 0.1f, 100.0f);
-	_gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
+    _gUniforms.view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -2.15f));
+    _gUniforms.projection = glm::perspective(1.2f, 1.0f, 1.f, 30.0f);
+    _gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
+
+    printf("size of gUniforms: %d\n", sizeof(_gUniforms));
 
     MaterialUniformBlock::Descriptor globalDescriptor{
 		{{"view", 0}, {"projection", sizeof(glm::mat4)}, {"invVP", sizeof(glm::mat4) * 2} },
         sizeof(glm::mat4) * 3
     };
 
+    printf("size of descriptor: %d\n", globalDescriptor.second);
+
     _globalUniformBlock = ResourceManager::getNextUniformBlock();
 
-    *_globalUniformBlock = MaterialUniformBlock(reinterpret_cast<uint8_t*>(&_gUniforms), globalDescriptor);
+    *_globalUniformBlock = MaterialUniformBlock(globalDescriptor);
+    _globalUniformBlock->setValue("view", &_gUniforms.view, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("projection", &_gUniforms.projection, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("invVP", &_gUniforms.invVP, sizeof(glm::mat4));
 
     _globalUniformBlock->uploadData();
 
@@ -36,7 +43,7 @@ void App::init()
     fs = ResourceManager::getNextShader();
 
     Shader::loadFromFile(vs, "resources/shaders/standard.vs", Shader::Vertex); 
-    Shader::loadFromFile(fs, "resources/shaders/standard.fs", Shader::Fragment); 
+    Shader::loadFromFile(fs, "resources/shaders/standard.fs", Shader::Fragment);
 
     program = ResourceManager::getNextShaderProgram();
     *program = ShaderProgram(vs, fs);
@@ -115,14 +122,20 @@ void App::init()
 
     _screenBuffer = ResourceManager::getNextFramebuffer();
 
+    int depthLoc = _composeMaterial->getUniformLocation("uDepthTex");
+
+    printf("depth loc: %d\n", depthLoc);
+
+    
+
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uColorTex"), _colorScreenTextures[0]);
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uPositionTex"), _colorScreenTextures[1]);
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uNormalTex"), _colorScreenTextures[2]);
     _composeMaterial->setUniform(_composeMaterial->getUniformLocation("uMetalRoughOccTex"), _colorScreenTextures[3]);
 	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uDepthTex"), _depthTexture);
 
-	Texture* sky = ResourceManager::getNextTexture();
 
+    Texture* sky = ResourceManager::getNextTexture();
 	Texture::loadFromFile(sky, "resources/textures/241-sky.png", 3);
 
 	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uSkyTex"), sky);
@@ -161,12 +174,14 @@ void App::render()
 
 	glDepthFunc(GL_ALWAYS);
     _composeMesh->render();
-	glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LEQUAL);
 
 
 	_gltfModel.render(GLTFModel::Layer::Transparent);
 
 	_sprayParticles.render();
+
+    
 
 #ifdef _DEBUG
     GLenum er = glGetError();
@@ -184,8 +199,10 @@ void App::update(double dt)
         float rotAmount = _controls->deltaMousePos().x * 90.0f * (float)dt;
 
 		_gUniforms.view = glm::rotate(_gUniforms.view, rotAmount, glm::vec3(0.0, 1.0, 0.0));
-
 		_gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
+
+        _globalUniformBlock->setValue("view", &_gUniforms.view, sizeof(glm::mat4));
+        _globalUniformBlock->setValue("invVP", &_gUniforms.invVP, sizeof(glm::mat4));
 
 		_globalUniformBlock->uploadData();
 
@@ -214,12 +231,16 @@ void App::resize(const glm::ivec2 & size)
 {
     _screenSize = size;
 
-    auto projection = glm::perspective(1.2f, size.x / (float)size.y, 0.1f, 100.0f);
-    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
+    _gUniforms.projection = glm::perspective(1.2f, size.x / (float)size.y, 1.f, 30.0f);
+    _gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
+
+    _globalUniformBlock->setValue("projection", &_gUniforms.projection, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("invVP", &_gUniforms.invVP, sizeof(glm::mat4));
+
     _globalUniformBlock->uploadData();
 
     *_colorScreenTextures[0] = Texture( size, GL_RGBA8, GL_RGBA);
-    *_colorScreenTextures[1] = Texture( size, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    *_colorScreenTextures[1] = Texture(size, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     *_colorScreenTextures[2] = Texture(size, GL_RGBA8, GL_RGBA);
     *_colorScreenTextures[3] = Texture(size, GL_RGBA8, GL_RGBA);
 

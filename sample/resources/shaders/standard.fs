@@ -9,7 +9,7 @@ in vec3 vTangent;
 in vec3 vBinormal;
 in vec4 vWorldPos;
 
-uniform Common
+layout(std140)  uniform Common
 {
 	mat4 view;
 	mat4 projection;

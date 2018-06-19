@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 
 #include <stb_image.h>
-
+#include <string>
 
 using namespace jkps::gl;
 

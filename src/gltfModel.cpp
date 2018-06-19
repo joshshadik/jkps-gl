@@ -90,8 +90,12 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
 			static constexpr int h = 512;
 			static constexpr int dataSize = w * h * 3;
 
-			static std::array<uint8_t, dataSize> texData;         
-            texData.assign(255);
+			static std::array<uint8_t, dataSize> texData;   
+
+            for (int i = 0; i < dataSize; ++i)
+            {
+                texData[i] = 255;
+            }
 
 			glm::ivec2 size(w, h);
             auto tex = ResourceManager::getNextTexture();

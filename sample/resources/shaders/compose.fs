@@ -3,7 +3,7 @@ precision highp float;
 
 in vec2 vTexcoord;
 
-uniform Common
+layout(std140) uniform Common
 {
 	mat4 view;
 	mat4 projection;
@@ -77,11 +77,11 @@ void main()
 
 
 
-    // if(n.w > 0.0 )
-    // {
-    //     col.rgb *= d;
-    //     col.rgb = col.rgb * 0.5 + col.rgb * mro.z;
-    // }
+    if(n.w > 0.0 )
+    {
+        col.rgb *= d;
+        col.rgb = col.rgb * 0.5 + col.rgb * mro.z;
+    }
 
 
    
