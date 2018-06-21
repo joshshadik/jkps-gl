@@ -30,7 +30,8 @@ static glm::mat4 vrProjectionMatrices[2];
 static glm::mat4 vrViewMatrices[2];
 
 
-static glm::ivec2 size = glm::ivec2(1280, 720);
+static glm::ivec2 windowSize = glm::ivec2(1280, 720);
+static glm::ivec2 size = windowSize;
 
 double lastTime;
 
@@ -42,7 +43,14 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    controls.setCursorPosition(xpos / size.x, ypos / size.y);
+    controls.setCursorPosition(xpos / windowSize.x, ypos / windowSize.y);
+}
+
+
+static void window_resized(GLFWwindow* window, int width, int height)
+{
+    size = glm::ivec2(width, height);
+    app.resize(size);
 }
 
 #ifdef USE_WASM
@@ -134,6 +142,7 @@ void main_loop(bool vr = false)
     app.update(currTime - lastTime);
     if (vr)
     {
+
         app.overrideViewProjection(vrViewMatrices[0], vrProjectionMatrices[0]);
         app.render(glm::ivec4(0, 0, size.x / 2, size.y));
 
@@ -157,8 +166,6 @@ void main_loop(bool vr = false)
 
 #ifdef USE_WASM
 
-
-
 static void printMatrix(float* m) {
     printf("{%f, %f, %f, %f,\n"
         " %f, %f, %f, %f,\n"
@@ -173,77 +180,17 @@ static void printMatrix(float* m) {
 
 /* Render loop without argument, set in `mainLoop()` */
 static void renderLoop() {
+
+    if (!inVR)
+    {
+        return;
+    }
+
     VRFrameData data;
     if (!emscripten_vr_get_frame_data(vrDisplay, &data)) {
         printf("Could not get frame data.\n");
         report_result(1);
     }
-
-    ///* Print list of properties which are reported as valid */
-    //printf("The following properties are valid:\n[");
-    //if (data.pose.poseFlags & VR_POSE_POSITION) {
-    //    printf("position, ");
-    //}
-    //if (data.pose.poseFlags & VR_POSE_LINEAR_VELOCITY) {
-    //    printf("linear vel, ");
-    //}
-    //if (data.pose.poseFlags & VR_POSE_LINEAR_ACCELERATION) {
-    //    printf("linear accel, ");
-    //}
-    //if (data.pose.poseFlags & VR_POSE_ORIENTATION) {
-    //    printf("orientation, ");
-    //}
-    //if (data.pose.poseFlags & VR_POSE_ANGULAR_VELOCITY) {
-    //    printf("angular vel, ");
-    //}
-    //if (data.pose.poseFlags & VR_POSE_ANGULAR_ACCELERATION) {
-    //    printf("angular accel");
-    //}
-    //printf("]\n");
-
-    ///* Print all values (independent of validity) */
-    //printf("Position: \t\t%f %f %f\n",
-    //    data.pose.position.x,
-    //    data.pose.position.y,
-    //    data.pose.position.z);
-
-    //printf("Linear Velocity: \t%f %f %f\n",
-    //    data.pose.linearVelocity.x,
-    //    data.pose.linearVelocity.y,
-    //    data.pose.linearVelocity.z);
-
-    //printf("Linear Acceleration: \t%f %f %f\n",
-    //    data.pose.linearAcceleration.x,
-    //    data.pose.linearAcceleration.y,
-    //    data.pose.linearAcceleration.z);
-
-    //printf("Orientation: \t\t%f %f %f %f\n",
-    //    data.pose.orientation.x,
-    //    data.pose.orientation.y,
-    //    data.pose.orientation.z,
-    //    data.pose.orientation.w);
-
-    //printf("Angular Velocity: \t%f %f %f\n",
-    //    data.pose.angularVelocity.x,
-    //    data.pose.angularVelocity.y,
-    //    data.pose.angularVelocity.z);
-
-    //printf("Angular Acceleration: \t%f %f %f\n",
-    //    data.pose.angularAcceleration.x,
-    //    data.pose.angularAcceleration.y,
-    //    data.pose.angularAcceleration.z);
-
-    //printf("Left Projection Matrix:\n");
-    //printMatrix(data.leftProjectionMatrix);
-
-    //printf("Right Projection Matrix:\n");
-    //printMatrix(data.rightProjectionMatrix);
-
-    //printf("Left View Matrix:\n");
-    //printMatrix(data.leftViewMatrix);
-
-    //printf("Right View Matrix:\n");
-    //printMatrix(data.rightViewMatrix);
 
     memcpy(&vrViewMatrices[0][0], data.leftViewMatrix, 16 * sizeof(float));
     memcpy(&vrViewMatrices[1][0], data.rightViewMatrix, 16 * sizeof(float));
@@ -251,13 +198,6 @@ static void renderLoop() {
     memcpy(&vrProjectionMatrices[0][0], data.leftProjectionMatrix, 16 * sizeof(float));
     memcpy(&vrProjectionMatrices[1][0], data.rightProjectionMatrix, 16 * sizeof(float));
 
-
-    //if (!emscripten_vr_submit_frame(vrDisplay)) {
-    //    printf("Error: Failed to submit frame to VR display %d (second iteration)\n", vrDisplay);
-    //    report_result(1);
-    //}
-
-    //printf("Submitted frame.\n");
 
     main_loop(true);
 
@@ -277,6 +217,11 @@ static void requestPresentCallback(void* userData) {
         report_result(1);
     }
 
+    VREyeParameters eyeParams;
+    emscripten_vr_get_eye_parameters(vrDisplay, (VREye)0, &eyeParams);
+
+    glfwSetWindowSize(window, eyeParams.renderWidth * 2, eyeParams.renderHeight);
+
     inVR = true;
 }
 
@@ -287,7 +232,7 @@ static EM_BOOL presentVRButtonEvent(int eventType, const EmscriptenMouseEvent* m
         if (!inVR)
         {
             VRLayerInit init = {
-                NULL,
+                "canvas",
                 VR_LAYER_DEFAULT_LEFT_BOUNDS,
                 VR_LAYER_DEFAULT_RIGHT_BOUNDS
             };
@@ -297,11 +242,16 @@ static EM_BOOL presentVRButtonEvent(int eventType, const EmscriptenMouseEvent* m
                 report_result(1);
                 return 0;
             }
+
+
         }
         else if (inVR)
-        {
+        {        
             emscripten_vr_cancel_display_render_loop(vrDisplay);
             emscripten_vr_exit_present(vrDisplay);
+            inVR = false;
+
+            glfwSetWindowSize(window, windowSize.x, windowSize.y);
         }
     }
 
@@ -355,13 +305,15 @@ int main(void)
 
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(size.x, size.y, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello World", NULL, NULL);
 
     if (!window)
     {
         glfwTerminate();
         return -1;
     }
+
+    glfwSetWindowSizeCallback(window, window_resized);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);

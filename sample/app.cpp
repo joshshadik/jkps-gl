@@ -54,7 +54,7 @@ void App::init()
     boxMesh = ResourceManager::getNextMesh();
     *boxMesh = Mesh(_quadGeo, material);
 
-    _modelPos = glm::vec3(0.0f, 2.0f, 0.0f);
+    _modelPos = glm::vec3(0.0f, 0.5f, 0.0f);
     _modelRot = glm::quat_cast(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
     _modelScale = glm::vec3(0.001f);
 
@@ -95,8 +95,8 @@ void App::init()
     _sprayParticles.lifetime(4.0f);
     _sprayParticles.direction(glm::vec3(1.0f, 1.0f, -1.0f));
     _sprayParticles.magnitude(20.0f);
-    _sprayParticles.randomness(0.1f);
-    _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, -1.5f));
+    _sprayParticles.randomness(0.15f);
+    _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, 0.0f));
 
 
     composeVS = ResourceManager::getNextShader();
@@ -234,12 +234,13 @@ void App::resize(const glm::ivec2 & size)
     _gUniforms.projection = glm::perspective(1.2f, size.x / (float)size.y, 1.f, 30.0f);
     _gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
 
+    _globalUniformBlock->setValue("view", &_gUniforms.view, sizeof(glm::mat4));
     _globalUniformBlock->setValue("projection", &_gUniforms.projection, sizeof(glm::mat4));
     _globalUniformBlock->setValue("invVP", &_gUniforms.invVP, sizeof(glm::mat4));
 
     _globalUniformBlock->uploadData();
 
-    *_colorScreenTextures[0] = Texture( size, GL_RGBA8, GL_RGBA);
+    *_colorScreenTextures[0] = Texture(size, GL_RGBA8, GL_RGBA);
     *_colorScreenTextures[1] = Texture(size, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     *_colorScreenTextures[2] = Texture(size, GL_RGBA8, GL_RGBA);
     *_colorScreenTextures[3] = Texture(size, GL_RGBA8, GL_RGBA);
@@ -256,13 +257,10 @@ void App::resize(const glm::ivec2 & size)
 
 void App::overrideViewProjection(const glm::mat4 & view, const glm::mat4 & projection)
 {
-    _gUniforms.view = view;
-    _gUniforms.projection = projection;
-
-    _globalUniformBlock->setValue("view", &_gUniforms.view, sizeof(glm::mat4));
-    _globalUniformBlock->setValue("projection", &_gUniforms.projection, sizeof(glm::mat4));
-    _gUniforms.invVP = glm::inverse(_gUniforms.projection * _gUniforms.view);
-    _globalUniformBlock->setValue("invVP", &_gUniforms.invVP, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("view", &view, sizeof(glm::mat4));
+    _globalUniformBlock->setValue("projection", &projection, sizeof(glm::mat4));
+    glm::mat4 invVP = glm::inverse(projection * view);
+    _globalUniformBlock->setValue("invVP", &invVP, sizeof(glm::mat4));
 
     _globalUniformBlock->uploadData();
 }
