@@ -37,7 +37,7 @@ namespace jkps
             GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader);
             static bool loadFromFile( GLTFModel* model, const std::string&& filename, ShaderProgram* overrideShader);
 
-            void render(int layerFlags = ~0);
+            void render(int layerFlags = ~0, Material* replacementMaterial = nullptr);
             void setMatrix(const glm::mat4& mtx) { _matrix = mtx; }
 
 			enum Layer
@@ -49,16 +49,10 @@ namespace jkps
         private:
             void importNode(const tinygltf::Node& node);
 
-            void renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags);
+            void renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags, Material* replacementMaterial);
 
         private:
             typedef std::pair<std::vector<Mesh*>, Layer> MeshGroup;
-
-			//struct MeshGroup
-			//{
-			//	std::vector<Mesh*> _meshes;
-
-			//};
 
             glm::mat4 _matrix;
             tinygltf::Model _model;

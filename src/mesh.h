@@ -15,8 +15,8 @@ namespace jkps
             Mesh(std::vector<Geometry*> geometries, Material* material);
             Mesh();
 
-            void render();
-            void render(const glm::mat4& mtx);
+            void render(Material* replacementMaterial = nullptr);
+            void render(const glm::mat4& mtx, Material* replacementMaterial = nullptr);
 
             void setInstances(uint32_t instances);
 
