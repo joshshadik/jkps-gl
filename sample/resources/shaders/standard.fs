@@ -9,10 +9,11 @@ in vec3 vTangent;
 in vec3 vBinormal;
 in vec4 vWorldPos;
 
-uniform Common
+layout(std140)  uniform Common
 {
 	mat4 view;
 	mat4 projection;
+	mat4 invVP;
 };
 
 uniform PBR
@@ -54,6 +55,7 @@ vec3 getNormal()
 
 void main(void) {
     vec4 col = texture(uDiffuse, vTexcoord.st); // vec4(vTexcoord.st, 0.0, 1.0); //
+	col.a = 1.0;
 	col *= diffuseFactor;
 
 	vec3 n = getNormal();
@@ -62,9 +64,10 @@ void main(void) {
 	// col.rgb *= d;
 
 	vec4 occ = texture(uOcclusionTex, vTexcoord.st);
-	// col.rgb = col.rgb * occ.r;
-
-    color = col * 0.5 * ( 1.0 +  occ.r );
+	col.rgb = col.rgb * occ.r;
+	//col.rgb = col.rgb * 0.5 * ( 1.0 +  occ.r );
+	
+    color = col;
 	position = vWorldPos;
 	normal = vec4(n, 1.0);
 	metalRoughOcc = vec4(metallicFactor * occ.g, roughnessFactor * occ.b, occ.r, 1.0);

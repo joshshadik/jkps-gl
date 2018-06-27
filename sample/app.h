@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "framebuffer.h"
 #include "gltfModel.h"
+#include "particleSystem.h"
 
 #include "controls.h"
 
@@ -29,8 +30,9 @@ using namespace jkps::gl;
 
 struct GlobalUniforms
 {
-    glm::mat4 _view;
-    glm::mat4 _projection;
+    glm::mat4 view;
+    glm::mat4 projection;
+	glm::mat4 invVP;
 };
 
 
@@ -42,13 +44,15 @@ public:
 
     void init();
 
-    void render();
+    void render(const glm::ivec4& viewport);
 
     void update(double dt);
 
     void setControls(Controls* controls);
 
     void resize(const glm::ivec2& size);
+
+    void overrideViewProjection(const glm::mat4& view, const glm::mat4& projection);
 
 private:
     Shader* vs;
@@ -84,4 +88,8 @@ private:
     Texture* _depthTexture;
 
     Controls* _controls;
+
+    jkps::engine::ParticleSystem _sprayParticles;
+    Material* _sprayMaterial;
+
 };

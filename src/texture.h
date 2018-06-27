@@ -20,8 +20,8 @@ namespace jkps
         class Texture
         {
         public:
-            Texture(const std::vector<uint8_t>& data, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE);
-            Texture(const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE);
+            Texture(const uint8_t* data, const int dataSize, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE, GLint magFilter = GL_NEAREST, GLint minFilter = GL_NEAREST);
+            Texture(const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType = GL_UNSIGNED_BYTE, GLint magFilter = GL_NEAREST, GLint minFilter = GL_NEAREST);
             Texture();
             ~Texture();
             Texture(Texture&& tex);
@@ -29,6 +29,8 @@ namespace jkps
 
             void bind();
             void unbind();
+
+			static void loadFromFile(Texture* texture, const std::string& filePath, int channels);
 
             GLuint id() { return _textureID; }
 

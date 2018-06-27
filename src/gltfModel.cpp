@@ -66,7 +66,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             break;
         }
         auto tex = ResourceManager::getNextTexture();
-        *tex = Texture(image.image, glm::ivec2(image.width, image.height), format, layout);
+        *tex = Texture(image.image.data(), image.image.size(), glm::ivec2(image.width, image.height), format, layout);
         _textures.push_back(tex);
     }
     
@@ -86,11 +86,20 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         }
         else
         {
-            std::vector<uint8_t> texData;
-            glm::ivec2 size(512, 512);
-            texData.assign(size.x * size.y * 3, 255);
+			static constexpr int w = 512;
+			static constexpr int h = 512;
+			static constexpr int dataSize = w * h * 3;
+
+			static std::array<uint8_t, dataSize> texData;   
+
+            for (int i = 0; i < dataSize; ++i)
+            {
+                texData[i] = 255;
+            }
+
+			glm::ivec2 size(w, h);
             auto tex = ResourceManager::getNextTexture();
-            *tex = Texture(texData, size, GL_RGB8, GL_RGB);
+            *tex = Texture(texData.data(), texData.size(), size, GL_RGB8, GL_RGB);
             _textures.push_back( tex);
             mat->setUniform(loc, tex);
         }
@@ -124,7 +133,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         };
 
         auto ubo = ResourceManager::getNextUniformBlock();
-        *ubo = MaterialUniformBlock(pbrDescriptor);
+        *ubo = MaterialUniformBlock( pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
         {          
@@ -248,7 +257,8 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             auto m = ResourceManager::getNextMesh();
             *m = Mesh(geo, _materials[primitive.material]);
 
-            meshGroup.push_back(m);
+            meshGroup.first.push_back(m);
+			meshGroup.second = _materials[primitive.material]->isBlended() ? Layer::Transparent : Layer::Opaque;
             ++currPrim;
         }
         _meshGroups.push_back(std::move(meshGroup));
@@ -298,12 +308,12 @@ bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename
     return true;
 }
 
-void jkps::gl::GLTFModel::render()
+void jkps::gl::GLTFModel::render(int layerFlags, Material* replacementMaterial)
 {
     const auto& scene = _model.scenes[_model.defaultScene];
     for (auto id : scene.nodes)
     {
-        renderTreeFromNode(id, _matrix);
+        renderTreeFromNode(id, _matrix, layerFlags, replacementMaterial);
     }
 }
 
@@ -317,7 +327,7 @@ void jkps::gl::GLTFModel::importNode(const tinygltf::Node & node)
     }
 }
 
-void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx)
+void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags, Material* replacementMaterial)
 {
     const auto& node = _model.nodes[nId];
 
@@ -332,14 +342,17 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
 
     if (node.mesh >= 0)
     {
-        for (auto& mesh : _meshGroups[node.mesh])
-        {
-            mesh->render(mtx);
-        }
+		if ((_meshGroups[node.mesh].second & layerFlags) != 0)
+		{
+			for (auto& mesh : _meshGroups[node.mesh].first)
+			{
+				mesh->render(mtx);
+			}
+		}
     }
 
     for (const auto id : node.children)
     {
-        renderTreeFromNode(id, mtx);
+        renderTreeFromNode(id, mtx, layerFlags, replacementMaterial);
     }
 }

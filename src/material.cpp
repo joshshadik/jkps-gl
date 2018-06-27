@@ -4,8 +4,10 @@
 
 using namespace jkps::gl;
 
-jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor& descriptor)
-    : _descriptor(descriptor)
+jkps::gl::MaterialUniformBlock::MaterialUniformBlock(uint8_t* buffer, const Descriptor& descriptor)
+    : _bufPtr(buffer)
+	, _descriptor(descriptor)
+	, _bufferSize(descriptor.second)
 {
     auto variables = _descriptor.first;
     for (const auto& v : variables)
@@ -13,11 +15,27 @@ jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor& descripto
         _offsets[v.first] = v.second;
     }
 
-    _buffer.resize(_descriptor.second);
+    glGenBuffers(1, &_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
+    glBufferData(GL_UNIFORM_BUFFER, _bufferSize, _bufPtr, GL_DYNAMIC_DRAW);
+}
+
+jkps::gl::MaterialUniformBlock::MaterialUniformBlock(const Descriptor & descriptor)
+    :_descriptor(descriptor)
+    , _bufferSize(descriptor.second)
+{
+    _buffer.resize(descriptor.second);
+    _bufPtr = _buffer.data();
+
+    auto variables = _descriptor.first;
+    for (const auto& v : variables)
+    {
+        _offsets[v.first] = v.second;
+    }
 
     glGenBuffers(1, &_ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
-    glBufferData(GL_UNIFORM_BUFFER, _descriptor.second, _buffer.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, _bufferSize, _bufPtr, GL_DYNAMIC_DRAW);
 }
 
 jkps::gl::MaterialUniformBlock::MaterialUniformBlock()
@@ -36,11 +54,18 @@ jkps::gl::MaterialUniformBlock::~MaterialUniformBlock()
 jkps::gl::MaterialUniformBlock::MaterialUniformBlock(MaterialUniformBlock && uniformBlock)
     : _ubo(uniformBlock._ubo)
     , _descriptor(uniformBlock._descriptor)
-    , _buffer(std::move(uniformBlock._buffer))
+    , _buffer(uniformBlock._buffer)
+    , _bufPtr(uniformBlock._bufPtr)
+    , _bufferSize(uniformBlock._bufferSize)
     , _offsets(std::move(uniformBlock._offsets))
     , _valid(uniformBlock._valid)
 {
     uniformBlock._valid = false;
+
+    if (_buffer.size() > 0)
+    {
+        _bufPtr = _buffer.data();
+    }
 }
 
 MaterialUniformBlock& jkps::gl::MaterialUniformBlock::operator=(MaterialUniformBlock && uniformBlock)
@@ -52,9 +77,16 @@ MaterialUniformBlock& jkps::gl::MaterialUniformBlock::operator=(MaterialUniformB
 
     _ubo = uniformBlock._ubo;
     _descriptor = uniformBlock._descriptor;
-    _buffer = std::move(uniformBlock._buffer);
+    _bufPtr = uniformBlock._bufPtr;
     _offsets = std::move(uniformBlock._offsets);
     _valid = uniformBlock._valid;
+    _buffer = std::move(uniformBlock._buffer);
+    _bufferSize = uniformBlock._bufferSize;
+
+    if (_buffer.size() > 0)
+    {
+        _bufPtr = _buffer.data();
+    }
 
     uniformBlock._valid = false;
 
@@ -70,7 +102,7 @@ void jkps::gl::MaterialUniformBlock::uploadData()
     glBufferSubData(GL_UNIFORM_BUFFER, 0, _buffer.size(), _buffer.data());
 #else
     GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER, 0, 1, GL_MAP_WRITE_BIT);
-    memcpy(p, _buffer.data(), _buffer.size());
+    memcpy(p, _bufPtr, _bufferSize);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 #endif
@@ -84,13 +116,12 @@ void jkps::gl::MaterialUniformBlock::bind(int binding)
 void jkps::gl::MaterialUniformBlock::setValue(const std::string & key, const void * data, const size_t size)
 {
     uint32_t offset = _offsets[key];
-    printf("offset for %s: %d \n", key.c_str(), offset);
-    memcpy(_buffer.data() + offset, data, size);
+    memcpy(_bufPtr + offset, data, size);
 }
 
 void jkps::gl::MaterialUniformBlock::setValue(const void * data, const size_t byteOffset, const size_t size)
 {
-    memcpy(_buffer.data() + byteOffset, data, size);
+    memcpy(_bufPtr + byteOffset, data, size);
 }
 
 jkps::gl::Material::Material(ShaderProgram* program)
@@ -138,6 +169,16 @@ void jkps::gl::Material::setUniform(GLint location, const glm::vec3 & value)
 }
 
 void jkps::gl::Material::setUniform(GLint location, const glm::vec2 & value)
+{
+    _uniforms[location].setValue(value);
+}
+
+void jkps::gl::Material::setUniform(GLint location, const float value)
+{
+    _uniforms[location].setValue(value);
+}
+
+void jkps::gl::Material::setUniform(GLint location, const int value)
 {
     _uniforms[location].setValue(value);
 }

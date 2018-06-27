@@ -33,6 +33,7 @@ namespace jkps
             void bind();
             static void bindDefault();
             static void bindDefault(const glm::ivec2& viewport);
+            static void bindDefaultVP(const glm::ivec4& viewport);
 
         private:
             Framebuffer(const Framebuffer&) = delete;

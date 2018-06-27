@@ -1,9 +1,9 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.6)
 project (jkps-gl)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
-set(SOURCE_PATH ${CMAKE_SOURCE_DIR})
+set(SOURCE_PATH ${PROJECT_SOURCE_DIR})
 
 option(WASM_BUILD OFF)
 
@@ -23,23 +23,6 @@ add_library(jkps-gl
 source_group(TREE "${SOURCE_PATH}/src/" PREFIX "source" FILES ${SRC_FILES})
 source_group(TREE "${SOURCE_PATH}/src/" PREFIX "headers" FILES ${HEADER_FILES})
 
-file(GLOB SAMPLE_SRC_FILES
-    "${SOURCE_PATH}/sample/*.cpp"
-)
-
-file(GLOB SAMPLE_HEADER_FILES
-   "${SOURCE_PATH}/sample/*.h"
-)
-
-add_executable(jkps-sample 
-    ${SAMPLE_SRC_FILES}
-    ${SAMPLE_HEADER_FILES}
-)
-
-source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "source" FILES ${SAMPLE_SRC_FILES})
-source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "headers" FILES ${SAMPLE_HEADER_FILES})
-
-# find_package(glm REQUIRED)
 
 add_library(glm INTERFACE)
 set_property(TARGET glm PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/glm/include")
@@ -53,7 +36,7 @@ target_link_libraries(jkps-gl PUBLIC
     tinygltf
 )
 
-set (TARGET jkps-gl PROPERTY CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -65,9 +48,9 @@ if( WASM_BUILD )
     set(CMAKE_CXX_FLAGS "-o hello.html --preload-file resources/ -O1 -s USE_WEBGL2=1 -s USE_GLFW=3  -s ALLOW_MEMORY_GROWTH=1 -s WASM=1  -std=c++11 ${CMAKE_CXX_FLAGS} ")
     add_definitions(-Wall -g -std=c++11)
     target_compile_definitions(jkps-gl PUBLIC USE_WASM)
-    target_compile_definitions(jkps-sample PUBLIC USE_WASM)
 
 else()
+
     find_package(glew REQUIRED)
     find_package(glfw3 REQUIRED)
 
@@ -83,27 +66,4 @@ else()
     endif()
 endif()
 
-
-
-target_include_directories(jkps-sample PUBLIC 
-"${SOURCE_PATH}/src/"
-)
-
-if( WASM_BUILD )
-
-    target_link_libraries(jkps-sample
-        jkps-gl
-
-    )
-
-else()
-    target_link_libraries(jkps-sample
-        jkps-gl
-        glfw
-        GLEW::GLEW
-        glu32
-        opengl32
-    )
-
-endif()
 
