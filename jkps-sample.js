@@ -120,6 +120,8 @@ Module['FS_createPath']('/resources', 'models', true, true);
 Module['FS_createPath']('/resources/models', 'venus_de_milo', true, true);
 Module['FS_createPath']('/resources/models/venus_de_milo', 'textures', true, true);
 Module['FS_createPath']('/resources', 'shaders', true, true);
+Module['FS_createPath']('/resources/shaders', 'spray', true, true);
+Module['FS_createPath']('/resources', 'textures', true, true);
 
     function DataRequest(start, end, crunched, audio) {
       this.start = start;
@@ -195,7 +197,7 @@ Module['FS_createPath']('/resources', 'shaders', true, true);
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 1039128, "filename": "/resources/models/venus_de_milo/scene.bin"}, {"audio": 0, "start": 1039128, "crunched": 0, "end": 1043735, "filename": "/resources/models/venus_de_milo/scene.gltf"}, {"audio": 0, "start": 1043735, "crunched": 0, "end": 2482056, "filename": "/resources/models/venus_de_milo/textures/Default_metallicRoughness.png"}, {"audio": 0, "start": 2482056, "crunched": 0, "end": 5439521, "filename": "/resources/models/venus_de_milo/textures/Default_normal.jpeg"}, {"audio": 0, "start": 5439521, "crunched": 0, "end": 5440145, "filename": "/resources/shaders/compose.fs"}, {"audio": 0, "start": 5440145, "crunched": 0, "end": 5440381, "filename": "/resources/shaders/compose.vs"}, {"audio": 0, "start": 5440381, "crunched": 0, "end": 5442007, "filename": "/resources/shaders/standard.fs"}, {"audio": 0, "start": 5442007, "crunched": 0, "end": 5442900, "filename": "/resources/shaders/standard.vs"}], "remote_package_size": 5442900, "package_uuid": "13184bfe-c28b-4bf4-bcff-039e6e9ec886"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 1039128, "filename": "/resources/models/venus_de_milo/scene.bin"}, {"audio": 0, "start": 1039128, "crunched": 0, "end": 1043983, "filename": "/resources/models/venus_de_milo/scene.gltf"}, {"audio": 0, "start": 1043983, "crunched": 0, "end": 2482304, "filename": "/resources/models/venus_de_milo/textures/Default_metallicRoughness.png"}, {"audio": 0, "start": 2482304, "crunched": 0, "end": 5439769, "filename": "/resources/models/venus_de_milo/textures/Default_normal.jpeg"}, {"audio": 0, "start": 5439769, "crunched": 0, "end": 5441531, "filename": "/resources/shaders/compose.fs"}, {"audio": 0, "start": 5441531, "crunched": 0, "end": 5441767, "filename": "/resources/shaders/compose.vs"}, {"audio": 0, "start": 5441767, "crunched": 0, "end": 5441986, "filename": "/resources/shaders/screen.vs"}, {"audio": 0, "start": 5441986, "crunched": 0, "end": 5441986, "filename": "/resources/shaders/sprayParticle.fs"}, {"audio": 0, "start": 5441986, "crunched": 0, "end": 5442568, "filename": "/resources/shaders/sprayParticle.vs"}, {"audio": 0, "start": 5442568, "crunched": 0, "end": 5444260, "filename": "/resources/shaders/standard.fs"}, {"audio": 0, "start": 5444260, "crunched": 0, "end": 5445182, "filename": "/resources/shaders/standard.vs"}, {"audio": 0, "start": 5445182, "crunched": 0, "end": 5445614, "filename": "/resources/shaders/spray/particle.fs"}, {"audio": 0, "start": 5445614, "crunched": 0, "end": 5446560, "filename": "/resources/shaders/spray/particle.vs"}, {"audio": 0, "start": 5446560, "crunched": 0, "end": 5447888, "filename": "/resources/shaders/spray/pos-vel.fs"}, {"audio": 0, "start": 5447888, "crunched": 0, "end": 5448244, "filename": "/resources/shaders/spray/pos.fs"}, {"audio": 0, "start": 5448244, "crunched": 0, "end": 5449147, "filename": "/resources/shaders/spray/vel.fs"}, {"audio": 0, "start": 5449147, "crunched": 0, "end": 9062403, "filename": "/resources/textures/241-sky.png"}], "remote_package_size": 9062403, "package_uuid": "ca5e375e-6fe7-43fc-969a-565bce24b7f9"});
 
 })();
 
@@ -1843,7 +1845,7 @@ var ASM_CONSTS = [];
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 47504;
+STATICTOP = STATIC_BASE + 835968;
 /* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__sub_I_main_cpp() } }, { func: function() { __GLOBAL__sub_I_gltfModel_cpp() } }, { func: function() { __GLOBAL__sub_I_shader_cpp() } });
 
 
@@ -1852,7 +1854,7 @@ STATICTOP = STATIC_BASE + 47504;
 
 
 
-var STATIC_BUMP = 47504;
+var STATIC_BUMP = 835968;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -5297,7 +5299,153 @@ function copyTempDouble(ptr) {
 
   
   
-  var Browser={mainLoop:{scheduler:null,method:"",currentlyRunningMainloop:0,func:null,arg:0,timingMode:0,timingValue:0,currentFrameNumber:0,queue:[],pause:function () {
+  
+  function _emscripten_set_main_loop_timing(mode, value) {
+      Browser.mainLoop.timingMode = mode;
+      Browser.mainLoop.timingValue = value;
+  
+      if (!Browser.mainLoop.func) {
+        return 1; // Return non-zero on failure, can't set timing mode when there is no main loop.
+      }
+  
+      if (mode == 0 /*EM_TIMING_SETTIMEOUT*/) {
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setTimeout() {
+          var timeUntilNextTick = Math.max(0, Browser.mainLoop.tickStartTime + value - _emscripten_get_now())|0;
+          setTimeout(Browser.mainLoop.runner, timeUntilNextTick); // doing this each time means that on exception, we stop
+        };
+        Browser.mainLoop.method = 'timeout';
+      } else if (mode == 1 /*EM_TIMING_RAF*/) {
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_rAF() {
+          Browser.requestAnimationFrame(Browser.mainLoop.runner);
+        };
+        Browser.mainLoop.method = 'rAF';
+      } else if (mode == 2 /*EM_TIMING_SETIMMEDIATE*/) {
+        if (typeof setImmediate === 'undefined') {
+          // Emulate setImmediate. (note: not a complete polyfill, we don't emulate clearImmediate() to keep code size to minimum, since not needed)
+          var setImmediates = [];
+          var emscriptenMainLoopMessageId = 'setimmediate';
+          function Browser_setImmediate_messageHandler(event) {
+            // When called in current thread or Worker, the main loop ID is structured slightly different to accommodate for --proxy-to-worker runtime listening to Worker events,
+            // so check for both cases.
+            if (event.data === emscriptenMainLoopMessageId || event.data.target === emscriptenMainLoopMessageId) {
+              event.stopPropagation();
+              setImmediates.shift()();
+            }
+          }
+          addEventListener("message", Browser_setImmediate_messageHandler, true);
+          setImmediate = function Browser_emulated_setImmediate(func) {
+            setImmediates.push(func);
+            if (ENVIRONMENT_IS_WORKER) {
+              if (Module['setImmediates'] === undefined) Module['setImmediates'] = [];
+              Module['setImmediates'].push(func);
+              postMessage({target: emscriptenMainLoopMessageId}); // In --proxy-to-worker, route the message via proxyClient.js
+            } else postMessage(emscriptenMainLoopMessageId, "*"); // On the main thread, can just send the message to itself.
+          }
+        }
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setImmediate() {
+          setImmediate(Browser.mainLoop.runner);
+        };
+        Browser.mainLoop.method = 'immediate';
+      }
+      return 0;
+    }
+  
+  function _emscripten_get_now() { abort() }function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTiming) {
+      Module['noExitRuntime'] = true;
+  
+      assert(!Browser.mainLoop.func, 'emscripten_set_main_loop: there can only be one main loop function at once: call emscripten_cancel_main_loop to cancel the previous one before setting a new one with different parameters.');
+  
+      Browser.mainLoop.func = func;
+      Browser.mainLoop.arg = arg;
+  
+      var browserIterationFunc;
+      if (typeof arg !== 'undefined') {
+        browserIterationFunc = function() {
+          Module['dynCall_vi'](func, arg);
+        };
+      } else {
+        browserIterationFunc = function() {
+          Module['dynCall_v'](func);
+        };
+      }
+  
+      var thisMainLoopId = Browser.mainLoop.currentlyRunningMainloop;
+  
+      Browser.mainLoop.runner = function Browser_mainLoop_runner() {
+        if (ABORT) return;
+        if (Browser.mainLoop.queue.length > 0) {
+          var start = Date.now();
+          var blocker = Browser.mainLoop.queue.shift();
+          blocker.func(blocker.arg);
+          if (Browser.mainLoop.remainingBlockers) {
+            var remaining = Browser.mainLoop.remainingBlockers;
+            var next = remaining%1 == 0 ? remaining-1 : Math.floor(remaining);
+            if (blocker.counted) {
+              Browser.mainLoop.remainingBlockers = next;
+            } else {
+              // not counted, but move the progress along a tiny bit
+              next = next + 0.5; // do not steal all the next one's progress
+              Browser.mainLoop.remainingBlockers = (8*remaining + next)/9;
+            }
+          }
+          console.log('main loop blocker "' + blocker.name + '" took ' + (Date.now() - start) + ' ms'); //, left: ' + Browser.mainLoop.remainingBlockers);
+          Browser.mainLoop.updateStatus();
+          
+          // catches pause/resume main loop from blocker execution
+          if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+          
+          setTimeout(Browser.mainLoop.runner, 0);
+          return;
+        }
+  
+        // catch pauses from non-main loop sources
+        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+  
+        // Implement very basic swap interval control
+        Browser.mainLoop.currentFrameNumber = Browser.mainLoop.currentFrameNumber + 1 | 0;
+        if (Browser.mainLoop.timingMode == 1/*EM_TIMING_RAF*/ && Browser.mainLoop.timingValue > 1 && Browser.mainLoop.currentFrameNumber % Browser.mainLoop.timingValue != 0) {
+          // Not the scheduled time to render this frame - skip.
+          Browser.mainLoop.scheduler();
+          return;
+        } else if (Browser.mainLoop.timingMode == 0/*EM_TIMING_SETTIMEOUT*/) {
+          Browser.mainLoop.tickStartTime = _emscripten_get_now();
+        }
+  
+        // Signal GL rendering layer that processing of a new frame is about to start. This helps it optimize
+        // VBO double-buffering and reduce GPU stalls.
+  
+  
+        if (Browser.mainLoop.method === 'timeout' && Module.ctx) {
+          Module.printErr('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
+          Browser.mainLoop.method = ''; // just warn once per call to set main loop
+        }
+  
+        Browser.mainLoop.runIter(browserIterationFunc);
+  
+  
+        // catch pauses from the main loop itself
+        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+  
+        // Queue new audio data. This is important to be right after the main loop invocation, so that we will immediately be able
+        // to queue the newest produced audio samples.
+        // TODO: Consider adding pre- and post- rAF callbacks so that GL.newRenderingFrameStarted() and SDL.audio.queueNewAudioData()
+        //       do not need to be hardcoded into this function, but can be more generic.
+        if (typeof SDL === 'object' && SDL.audio && SDL.audio.queueNewAudioData) SDL.audio.queueNewAudioData();
+  
+        Browser.mainLoop.scheduler();
+      }
+  
+      if (!noSetTiming) {
+        if (fps && fps > 0) _emscripten_set_main_loop_timing(0/*EM_TIMING_SETTIMEOUT*/, 1000.0 / fps);
+        else _emscripten_set_main_loop_timing(1/*EM_TIMING_RAF*/, 1); // Do rAF by rendering each frame (no decimating)
+  
+        Browser.mainLoop.scheduler();
+      }
+  
+      if (simulateInfiniteLoop) {
+        throw 'SimulateInfiniteLoop';
+      }
+    }var Browser={mainLoop:{scheduler:null,method:"",currentlyRunningMainloop:0,func:null,arg:0,timingMode:0,timingValue:0,currentFrameNumber:0,queue:[],pause:function () {
           Browser.mainLoop.scheduler = null;
           Browser.mainLoop.currentlyRunningMainloop++; // Incrementing this signals the previous main loop that it's now become old, and it must return.
         },resume:function () {
@@ -5901,151 +6049,9 @@ function copyTempDouble(ptr) {
         var handle = Browser.nextWgetRequestHandle;
         Browser.nextWgetRequestHandle++;
         return handle;
-      }};function _emscripten_set_main_loop_timing(mode, value) {
-      Browser.mainLoop.timingMode = mode;
-      Browser.mainLoop.timingValue = value;
-  
-      if (!Browser.mainLoop.func) {
-        return 1; // Return non-zero on failure, can't set timing mode when there is no main loop.
-      }
-  
-      if (mode == 0 /*EM_TIMING_SETTIMEOUT*/) {
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setTimeout() {
-          var timeUntilNextTick = Math.max(0, Browser.mainLoop.tickStartTime + value - _emscripten_get_now())|0;
-          setTimeout(Browser.mainLoop.runner, timeUntilNextTick); // doing this each time means that on exception, we stop
-        };
-        Browser.mainLoop.method = 'timeout';
-      } else if (mode == 1 /*EM_TIMING_RAF*/) {
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_rAF() {
-          Browser.requestAnimationFrame(Browser.mainLoop.runner);
-        };
-        Browser.mainLoop.method = 'rAF';
-      } else if (mode == 2 /*EM_TIMING_SETIMMEDIATE*/) {
-        if (typeof setImmediate === 'undefined') {
-          // Emulate setImmediate. (note: not a complete polyfill, we don't emulate clearImmediate() to keep code size to minimum, since not needed)
-          var setImmediates = [];
-          var emscriptenMainLoopMessageId = 'setimmediate';
-          function Browser_setImmediate_messageHandler(event) {
-            // When called in current thread or Worker, the main loop ID is structured slightly different to accommodate for --proxy-to-worker runtime listening to Worker events,
-            // so check for both cases.
-            if (event.data === emscriptenMainLoopMessageId || event.data.target === emscriptenMainLoopMessageId) {
-              event.stopPropagation();
-              setImmediates.shift()();
-            }
-          }
-          addEventListener("message", Browser_setImmediate_messageHandler, true);
-          setImmediate = function Browser_emulated_setImmediate(func) {
-            setImmediates.push(func);
-            if (ENVIRONMENT_IS_WORKER) {
-              if (Module['setImmediates'] === undefined) Module['setImmediates'] = [];
-              Module['setImmediates'].push(func);
-              postMessage({target: emscriptenMainLoopMessageId}); // In --proxy-to-worker, route the message via proxyClient.js
-            } else postMessage(emscriptenMainLoopMessageId, "*"); // On the main thread, can just send the message to itself.
-          }
-        }
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setImmediate() {
-          setImmediate(Browser.mainLoop.runner);
-        };
-        Browser.mainLoop.method = 'immediate';
-      }
-      return 0;
-    }
-  
-  function _emscripten_get_now() { abort() }function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTiming) {
-      Module['noExitRuntime'] = true;
-  
-      assert(!Browser.mainLoop.func, 'emscripten_set_main_loop: there can only be one main loop function at once: call emscripten_cancel_main_loop to cancel the previous one before setting a new one with different parameters.');
-  
-      Browser.mainLoop.func = func;
-      Browser.mainLoop.arg = arg;
-  
-      var browserIterationFunc;
-      if (typeof arg !== 'undefined') {
-        browserIterationFunc = function() {
-          Module['dynCall_vi'](func, arg);
-        };
-      } else {
-        browserIterationFunc = function() {
-          Module['dynCall_v'](func);
-        };
-      }
-  
-      var thisMainLoopId = Browser.mainLoop.currentlyRunningMainloop;
-  
-      Browser.mainLoop.runner = function Browser_mainLoop_runner() {
-        if (ABORT) return;
-        if (Browser.mainLoop.queue.length > 0) {
-          var start = Date.now();
-          var blocker = Browser.mainLoop.queue.shift();
-          blocker.func(blocker.arg);
-          if (Browser.mainLoop.remainingBlockers) {
-            var remaining = Browser.mainLoop.remainingBlockers;
-            var next = remaining%1 == 0 ? remaining-1 : Math.floor(remaining);
-            if (blocker.counted) {
-              Browser.mainLoop.remainingBlockers = next;
-            } else {
-              // not counted, but move the progress along a tiny bit
-              next = next + 0.5; // do not steal all the next one's progress
-              Browser.mainLoop.remainingBlockers = (8*remaining + next)/9;
-            }
-          }
-          console.log('main loop blocker "' + blocker.name + '" took ' + (Date.now() - start) + ' ms'); //, left: ' + Browser.mainLoop.remainingBlockers);
-          Browser.mainLoop.updateStatus();
-          
-          // catches pause/resume main loop from blocker execution
-          if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-          
-          setTimeout(Browser.mainLoop.runner, 0);
-          return;
-        }
-  
-        // catch pauses from non-main loop sources
-        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-  
-        // Implement very basic swap interval control
-        Browser.mainLoop.currentFrameNumber = Browser.mainLoop.currentFrameNumber + 1 | 0;
-        if (Browser.mainLoop.timingMode == 1/*EM_TIMING_RAF*/ && Browser.mainLoop.timingValue > 1 && Browser.mainLoop.currentFrameNumber % Browser.mainLoop.timingValue != 0) {
-          // Not the scheduled time to render this frame - skip.
-          Browser.mainLoop.scheduler();
-          return;
-        } else if (Browser.mainLoop.timingMode == 0/*EM_TIMING_SETTIMEOUT*/) {
-          Browser.mainLoop.tickStartTime = _emscripten_get_now();
-        }
-  
-        // Signal GL rendering layer that processing of a new frame is about to start. This helps it optimize
-        // VBO double-buffering and reduce GPU stalls.
-  
-  
-        if (Browser.mainLoop.method === 'timeout' && Module.ctx) {
-          Module.printErr('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
-          Browser.mainLoop.method = ''; // just warn once per call to set main loop
-        }
-  
-        Browser.mainLoop.runIter(browserIterationFunc);
-  
-  
-        // catch pauses from the main loop itself
-        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-  
-        // Queue new audio data. This is important to be right after the main loop invocation, so that we will immediately be able
-        // to queue the newest produced audio samples.
-        // TODO: Consider adding pre- and post- rAF callbacks so that GL.newRenderingFrameStarted() and SDL.audio.queueNewAudioData()
-        //       do not need to be hardcoded into this function, but can be more generic.
-        if (typeof SDL === 'object' && SDL.audio && SDL.audio.queueNewAudioData) SDL.audio.queueNewAudioData();
-  
-        Browser.mainLoop.scheduler();
-      }
-  
-      if (!noSetTiming) {
-        if (fps && fps > 0) _emscripten_set_main_loop_timing(0/*EM_TIMING_SETTIMEOUT*/, 1000.0 / fps);
-        else _emscripten_set_main_loop_timing(1/*EM_TIMING_RAF*/, 1); // Do rAF by rendering each frame (no decimating)
-  
-        Browser.mainLoop.scheduler();
-      }
-  
-      if (simulateInfiniteLoop) {
-        throw 'SimulateInfiniteLoop';
-      }
+      }};function _emscripten_cancel_main_loop() {
+      Browser.mainLoop.pause();
+      Browser.mainLoop.func = null;
     }
 
   
@@ -6966,7 +6972,13 @@ function copyTempDouble(ptr) {
           useCapture: useCapture
         };
         JSEvents.registerOrRemoveHandler(eventHandler);
-      }};function _emscripten_set_pointerlockchange_callback(target, userData, useCapture, callbackfunc) {
+      }};function _emscripten_set_click_callback(target, userData, useCapture, callbackfunc) {
+      JSEvents.registerMouseEventCallback(target, userData, useCapture, callbackfunc, 4, "click");
+      return 0;
+    }
+
+
+  function _emscripten_set_pointerlockchange_callback(target, userData, useCapture, callbackfunc) {
       // TODO: Currently not supported in pthreads or in --proxy-to-worker mode. (In pthreads mode, document object is not defined)
       if (!document || !document.body || (!document.body.requestPointerLock && !document.body.mozRequestPointerLock && !document.body.webkitRequestPointerLock && !document.body.msRequestPointerLock)) {
         return -1;
@@ -6981,6 +6993,320 @@ function copyTempDouble(ptr) {
       JSEvents.registerPointerlockChangeEventCallback(target, userData, useCapture, callbackfunc, 20, "webkitpointerlockchange");
       JSEvents.registerPointerlockChangeEventCallback(target, userData, useCapture, callbackfunc, 20, "mspointerlockchange");
       return 0;
+    }
+
+  
+  var WebVR={EYE_LEFT:0,EYE_RIGHT:1,POSE_POSITION:1,POSE_LINEAR_VELOCITY:2,POSE_LINEAR_ACCELERATION:4,POSE_ORIENTATION:8,POSE_ANGULAR_VELOCITY:16,POSE_ANGULAR_ACCELERATION:32,initialized:false,ready:false,version:[-1,-1],displays:[],displayNames:[],init:function (callback) {
+        if (WebVR.initialized) return;
+  
+        WebVR.initialized = true;
+  
+        if (!navigator.getVRDisplays) {
+          /* WebVR 1.1 required, but not supported. */
+          WebVR.ready = true;
+          WebVR.displays = [];
+          return 0;
+        }
+  
+        WebVR.version = [1, 1];
+  
+        navigator.getVRDisplays().then(function(displays) {
+          WebVR.ready = true;
+          WebVR.displays = displays;
+          WebVR.displayNames = new Array(displays.length);
+          callback();
+        });
+  
+        return 1;
+      },deinit:function () {
+        WebVR.displayNames.forEach(function(name) {
+          _free(name);
+        });
+        return 1
+      },dereferenceDisplayHandle:function (displayHandle) {
+        /* Display handles start as 1 as 0 will be interpreted as false or null-handle
+         * on errors */
+        if (displayHandle < 1 || displayHandle > WebVR.displays.length) {
+          console.log("library_vr dereferenceDisplayHandle invalid display handle at: " + stackTrace());
+          return null;
+        }
+  
+        return WebVR.displays[displayHandle-1];
+      }};function _emscripten_vr_cancel_display_render_loop(displayHandle) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display || !display.mainLoop) return 0;
+  
+      display.mainLoop.pause();
+      return 1;
+    }
+
+  function _emscripten_vr_count_displays() {
+      return WebVR.displays.length;
+    }
+
+  function _emscripten_vr_exit_present(displayHandle) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display) return 0;
+  
+      display.exitPresent();
+      return 1;
+    }
+
+  function _emscripten_vr_get_display_handle(displayIndex) {
+      if (displayIndex < 0 || displayIndex >= WebVR.displays.length) {
+        return -1;
+      }
+  
+      /* As displayHandle == 0 will be interpreted as NULL handle for errors,
+       * the handle is index + 1. */
+      return displayIndex + 1;
+    }
+
+  function _emscripten_vr_get_display_name(displayHandle) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display) return 0;
+  
+      var name = WebVR.displayNames[displayHandle-1];
+      if (name) {
+        return name;
+      }
+  
+      var buffer, displayName;
+      displayName = display ? display.displayName : "";
+      var len = lengthBytesUTF8(displayName);
+      buffer = _malloc(len + 1);
+      stringToUTF8(displayName, buffer, len + 1);
+  
+      WebVR.displayNames[displayHandle-1] = buffer;
+  
+      return buffer;
+    }
+
+  function _emscripten_vr_get_eye_parameters(displayHandle, whichEye, eyeParamsPtr) {
+      if (!eyeParamsPtr) return 0;
+  
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display) return 0;
+  
+      var params = display.getEyeParameters(whichEye == WebVR.EYE_LEFT ? "left" : "right");
+  
+      HEAPF32[((eyeParamsPtr)>>2)]=params.offset[0];
+      HEAPF32[(((eyeParamsPtr)+(4))>>2)]=params.offset[1];
+      HEAPF32[(((eyeParamsPtr)+(8))>>2)]=params.offset[2];
+  
+      (tempI64 = [params.renderWidth>>>0,(tempDouble=params.renderWidth,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[(((eyeParamsPtr)+(12))>>2)]=tempI64[0],HEAP32[(((eyeParamsPtr)+(16))>>2)]=tempI64[1]);
+      (tempI64 = [params.renderHeight>>>0,(tempDouble=params.renderHeight,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[(((eyeParamsPtr)+(16))>>2)]=tempI64[0],HEAP32[(((eyeParamsPtr)+(20))>>2)]=tempI64[1]);
+  
+      return 1;
+    }
+
+  function _emscripten_vr_get_frame_data(displayHandle, frameDataPtr) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display || !display.mainLoop || !frameDataPtr) return 0;
+  
+      if (!display.frameData) {
+        display.frameData = new VRFrameData();
+      }
+      display.getFrameData(display.frameData);
+  
+      /* Pose */
+  
+      /* Used to expose to C which attributes are valid (!== null) */
+      var poseFlags = 0;
+  
+      HEAPF64[((frameDataPtr)>>3)]=display.frameData.timestamp;
+  
+      if (display.frameData.pose.position !== null) {
+        HEAPF32[(((frameDataPtr)+(264))>>2)]=display.frameData.pose.position[0];
+        HEAPF32[(((frameDataPtr)+(268))>>2)]=display.frameData.pose.position[1];
+        HEAPF32[(((frameDataPtr)+(272))>>2)]=display.frameData.pose.position[2];
+  
+        poseFlags |= WebVR.POSE_POSITION;
+      }
+  
+      if (display.frameData.pose.linearVelocity !== null) {
+        HEAPF32[(((frameDataPtr)+(276))>>2)]=display.frameData.pose.linearVelocity[0];
+        HEAPF32[(((frameDataPtr)+(280))>>2)]=display.frameData.pose.linearVelocity[1];
+        HEAPF32[(((frameDataPtr)+(284))>>2)]=display.frameData.pose.linearVelocity[2];
+  
+        poseFlags |= WebVR.POSE_LINEAR_VELOCITY;
+      }
+  
+      if (display.frameData.pose.linearAcceleration !== null) {
+        HEAPF32[(((frameDataPtr)+(288))>>2)]=display.frameData.pose.linearAcceleration[0];
+        HEAPF32[(((frameDataPtr)+(292))>>2)]=display.frameData.pose.linearAcceleration[1];
+        HEAPF32[(((frameDataPtr)+(296))>>2)]=display.frameData.pose.linearAcceleration[2];
+  
+        poseFlags |= WebVR.POSE_LINEAR_ACCELERATION;
+      }
+  
+      if (display.frameData.pose.orientation !== null) {
+        HEAPF32[(((frameDataPtr)+(300))>>2)]=display.frameData.pose.orientation[0];
+        HEAPF32[(((frameDataPtr)+(304))>>2)]=display.frameData.pose.orientation[1];
+        HEAPF32[(((frameDataPtr)+(308))>>2)]=display.frameData.pose.orientation[2];
+        HEAPF32[(((frameDataPtr)+(312))>>2)]=display.frameData.pose.orientation[3];
+  
+          poseFlags |= WebVR.POSE_ORIENTATION;
+      }
+  
+      if (display.frameData.pose.angularVelocity !== null) {
+        HEAPF32[(((frameDataPtr)+(316))>>2)]=display.frameData.pose.angularVelocity[0];
+        HEAPF32[(((frameDataPtr)+(320))>>2)]=display.frameData.pose.angularVelocity[1];
+        HEAPF32[(((frameDataPtr)+(324))>>2)]=display.frameData.pose.angularVelocity[2];
+  
+        poseFlags |= WebVR.POSE_ANGULAR_VELOCITY;
+      }
+  
+      if (display.frameData.pose.angularAcceleration !== null) {
+        HEAPF32[(((frameDataPtr)+(328))>>2)]=display.frameData.pose.angularAcceleration[0];
+        HEAPF32[(((frameDataPtr)+(332))>>2)]=display.frameData.pose.angularAcceleration[1];
+        HEAPF32[(((frameDataPtr)+(336))>>2)]=display.frameData.pose.angularAcceleration[0];
+  
+        poseFlags |= WebVR.POSE_ANGULAR_ACCELERATION;
+      }
+  
+      HEAP32[(((frameDataPtr)+(340))>>2)]=poseFlags;
+  
+      /* Matrices */
+  
+      for (var i = 0; i < 16; ++i) {
+        HEAPF32[(((frameDataPtr)+(8 + i*4))>>2)]=display.frameData.leftProjectionMatrix[i];
+      }
+  
+      for (var i = 0; i < 16; ++i) {
+        HEAPF32[(((frameDataPtr)+(72 + i*4))>>2)]=display.frameData.leftViewMatrix[i];
+      }
+  
+      for (var i = 0; i < 16; ++i) {
+        HEAPF32[(((frameDataPtr)+(136 + i*4))>>2)]=display.frameData.rightProjectionMatrix[i];
+      }
+  
+      for (var i = 0; i < 16; ++i) {
+        HEAPF32[(((frameDataPtr)+(200 + i*4))>>2)]=display.frameData.rightViewMatrix[i];
+      }
+  
+      return 1;
+    }
+
+  function _emscripten_vr_init(func, userData) {
+      return WebVR.init(function() {
+        Runtime.dynCall('vi', func, [userData]);
+      });
+    }
+
+  function _emscripten_vr_request_present(displayHandle, layerInitPtr, layerCount, func, userData) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display) return 0;
+  
+      layerInit = new Array(layerCount);
+      for (var i = 0; i < layerCount; ++i) {
+        sourceStrPtr = HEAP32[((layerInitPtr)>>2)];
+  
+        var source = null;
+        if (sourceStrPtr == 0) {
+          source = Module['canvas'];
+        } else {
+          sourceStr = UTF8ToString(sourceStrPtr);
+  
+          if (sourceStr && sourceStr.length > 0) {
+            source = document.getElementById(sourceStr);
+          }
+  
+          if (!source) {
+            return 0;
+          }
+        }
+  
+        leftBounds = new Float32Array(4);
+        rightBounds = new Float32Array(4);
+        var ptr = layerInitPtr;
+        for (var j = 0; j < 4; ++j) {
+          leftBounds[j] = HEAPF32[(((layerInitPtr)+(4+ 4*j))>>2)];
+          rightBounds[j] = HEAPF32[(((layerInitPtr)+(20+ 4*j))>>2)];
+          ptr += 4;
+        }
+  
+        layerInit[i] = {
+          source: source,
+          leftBounds: leftBounds,
+          rightBounds: rightBounds
+        };
+        layerInitPtr += 36;
+      }
+  
+      display.requestPresent(layerInit).then(function() {
+        if (!func) return;
+        dynCall('vi', func, [userData]);
+      });
+  
+      return 1;
+    }
+
+  function _emscripten_vr_set_display_render_loop(displayHandle, func, arg) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display) return 0;
+  
+      assert(!display.mainLoop || !display.mainLoop.scheduler, "emscripten_vr_set_device_main_loop: there can only be one render loop function per VRDisplay: call emscripten_vr_cancel_render_loop to cancel the previous one before setting a new one with different parameters.");
+  
+      var displayIterationFunc;
+      if (typeof arg !== 'undefined') {
+        displayIterationFunc = function() {
+          dynCall('vi', func, [arg]);
+        };
+      } else {
+        displayIterationFunc = function() {
+          dynCall('v', func);
+        };
+      }
+  
+      display.mainLoop = {
+        running: !display.mainLoop ? false : display.mainLoop.running,
+        scheduler: function() {
+          display.requestAnimationFrame(display.mainLoop.runner);
+        },
+        runner: function() {
+          if (ABORT) return;
+  
+          /* Prevent scheduler being called twice when loop is changed */
+          display.mainLoop.running = true;
+  
+  
+          try {
+            displayIterationFunc();
+          } catch (e) {
+            if (e instanceof ExitStatus) {
+              return;
+            } else {
+              if (e && typeof e === 'object' && e.stack) Module.printErr('exception thrown in render loop of VR display ' + displayHandle.toString() + ': ' + [e, e.stack]);
+              throw e;
+            }
+          }
+  
+  
+          if (!display.mainLoop.scheduler) {
+            display.mainLoop.running = false;
+          } else {
+            display.mainLoop.scheduler();
+          }
+        },
+        pause: function() {
+          display.mainLoop.scheduler = null;
+        }
+      };
+  
+      if (!display.mainLoop.running) {
+        display.mainLoop.scheduler();
+      } // otherwise called by display.mainLoop.runner()
+      return 1;
+    }
+
+  function _emscripten_vr_submit_frame(displayHandle) {
+      var display = WebVR.dereferenceDisplayHandle(displayHandle);
+      if (!display || !display.mainLoop) return 0;
+  
+      display.submitFrame();
+  
+      return 1;
     }
 
   
@@ -7423,6 +7749,12 @@ function copyTempDouble(ptr) {
       }
     }
 
+  function _glDepthFunc(x0) { GLctx['depthFunc'](x0) }
+
+  function _glDepthMask(flag) {
+      GLctx.depthMask(!!flag);
+    }
+
   function _glDetachShader(program, shader) {
       GLctx.detachShader(GL.programs[program],
                               GL.shaders[shader]);
@@ -7444,6 +7776,10 @@ function copyTempDouble(ptr) {
   
       GLctx.drawElements(mode, count, type, indices);
   
+    }
+
+  function _glDrawElementsInstanced(mode, count, type, indices, primcount) {
+      GLctx['drawElementsInstanced'](mode, count, type, indices, primcount);
     }
 
   function _glEnable(x0) { GLctx['enable'](x0) }
@@ -8777,6 +9113,14 @@ function copyTempDouble(ptr) {
       GLFW.setMouseButtonCallback(winid, cbfun);
     }
 
+  function _glfwSetWindowSize(winid, width, height) {
+      GLFW.setWindowSize(winid, width, height);
+    }
+
+  function _glfwSetWindowSizeCallback(winid, cbfun) {
+      GLFW.setWindowSizeCallback(winid, cbfun);
+    }
+
   function _glfwSwapBuffers(winid) {
       GLFW.swapBuffers(winid);
     }
@@ -9278,9 +9622,9 @@ function intArrayToString(array) {
 
 
 
-Module['wasmTableSize'] = 496;
+Module['wasmTableSize'] = 498;
 
-Module['wasmMaxTableSize'] = 496;
+Module['wasmMaxTableSize'] = 498;
 
 function invoke_ii(index,a1) {
   try {
@@ -9464,7 +9808,7 @@ function invoke_viijii(index,a1,a2,a3,a4,a5,a6) {
 
 Module.asmGlobalArg = {};
 
-Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "invoke_ii": invoke_ii, "invoke_iii": invoke_iii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_iiiiid": invoke_iiiiid, "invoke_iiiiii": invoke_iiiiii, "invoke_iiiiiid": invoke_iiiiiid, "invoke_iiiiiii": invoke_iiiiiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_iiiiij": invoke_iiiiij, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vidd": invoke_vidd, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "invoke_viiii": invoke_viiii, "invoke_viiiii": invoke_viiiii, "invoke_viiiiii": invoke_viiiiii, "invoke_viijii": invoke_viijii, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "___assert_fail": ___assert_fail, "___buildEnvironment": ___buildEnvironment, "___cxa_allocate_exception": ___cxa_allocate_exception, "___cxa_begin_catch": ___cxa_begin_catch, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "___cxa_pure_virtual": ___cxa_pure_virtual, "___cxa_throw": ___cxa_throw, "___gxx_personality_v0": ___gxx_personality_v0, "___lock": ___lock, "___map_file": ___map_file, "___resumeException": ___resumeException, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall145": ___syscall145, "___syscall146": ___syscall146, "___syscall221": ___syscall221, "___syscall5": ___syscall5, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "___syscall91": ___syscall91, "___unlock": ___unlock, "__addDays": __addDays, "__arraySum": __arraySum, "__isLeapYear": __isLeapYear, "_abort": _abort, "_emscripten_get_now": _emscripten_get_now, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_emscripten_set_main_loop": _emscripten_set_main_loop, "_emscripten_set_main_loop_timing": _emscripten_set_main_loop_timing, "_emscripten_set_pointerlockchange_callback": _emscripten_set_pointerlockchange_callback, "_getenv": _getenv, "_glActiveTexture": _glActiveTexture, "_glAttachShader": _glAttachShader, "_glBindBuffer": _glBindBuffer, "_glBindBufferBase": _glBindBufferBase, "_glBindFramebuffer": _glBindFramebuffer, "_glBindTexture": _glBindTexture, "_glBindVertexArray": _glBindVertexArray, "_glBlendFunc": _glBlendFunc, "_glBufferData": _glBufferData, "_glBufferSubData": _glBufferSubData, "_glClear": _glClear, "_glClearColor": _glClearColor, "_glCompileShader": _glCompileShader, "_glCreateProgram": _glCreateProgram, "_glCreateShader": _glCreateShader, "_glDeleteBuffers": _glDeleteBuffers, "_glDeleteFramebuffers": _glDeleteFramebuffers, "_glDeleteShader": _glDeleteShader, "_glDeleteTextures": _glDeleteTextures, "_glDeleteVertexArrays": _glDeleteVertexArrays, "_glDetachShader": _glDetachShader, "_glDisable": _glDisable, "_glDrawBuffers": _glDrawBuffers, "_glDrawElements": _glDrawElements, "_glEnable": _glEnable, "_glEnableVertexAttribArray": _glEnableVertexAttribArray, "_glFramebufferTexture2D": _glFramebufferTexture2D, "_glGenBuffers": _glGenBuffers, "_glGenFramebuffers": _glGenFramebuffers, "_glGenTextures": _glGenTextures, "_glGenVertexArrays": _glGenVertexArrays, "_glGetProgramiv": _glGetProgramiv, "_glGetShaderInfoLog": _glGetShaderInfoLog, "_glGetShaderiv": _glGetShaderiv, "_glGetUniformBlockIndex": _glGetUniformBlockIndex, "_glGetUniformLocation": _glGetUniformLocation, "_glLinkProgram": _glLinkProgram, "_glShaderSource": _glShaderSource, "_glTexImage2D": _glTexImage2D, "_glTexParameteri": _glTexParameteri, "_glUniform1fv": _glUniform1fv, "_glUniform1i": _glUniform1i, "_glUniform1ui": _glUniform1ui, "_glUniform2fv": _glUniform2fv, "_glUniform3fv": _glUniform3fv, "_glUniform4fv": _glUniform4fv, "_glUniformBlockBinding": _glUniformBlockBinding, "_glUniformMatrix4fv": _glUniformMatrix4fv, "_glUseProgram": _glUseProgram, "_glVertexAttribPointer": _glVertexAttribPointer, "_glViewport": _glViewport, "_glfwCreateWindow": _glfwCreateWindow, "_glfwGetTime": _glfwGetTime, "_glfwInit": _glfwInit, "_glfwMakeContextCurrent": _glfwMakeContextCurrent, "_glfwPollEvents": _glfwPollEvents, "_glfwSetCursorPosCallback": _glfwSetCursorPosCallback, "_glfwSetInputMode": _glfwSetInputMode, "_glfwSetMouseButtonCallback": _glfwSetMouseButtonCallback, "_glfwSwapBuffers": _glfwSwapBuffers, "_glfwTerminate": _glfwTerminate, "_glfwWindowHint": _glfwWindowHint, "_llvm_pow_f32": _llvm_pow_f32, "_llvm_trap": _llvm_trap, "_pthread_cond_wait": _pthread_cond_wait, "_pthread_getspecific": _pthread_getspecific, "_pthread_key_create": _pthread_key_create, "_pthread_once": _pthread_once, "_pthread_setspecific": _pthread_setspecific, "_strftime": _strftime, "_strftime_l": _strftime_l, "emscriptenWebGLComputeImageSize": emscriptenWebGLComputeImageSize, "emscriptenWebGLGetHeapForType": emscriptenWebGLGetHeapForType, "emscriptenWebGLGetShiftForType": emscriptenWebGLGetShiftForType, "emscriptenWebGLGetTexPixelData": emscriptenWebGLGetTexPixelData, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
+Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "invoke_ii": invoke_ii, "invoke_iii": invoke_iii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_iiiiid": invoke_iiiiid, "invoke_iiiiii": invoke_iiiiii, "invoke_iiiiiid": invoke_iiiiiid, "invoke_iiiiiii": invoke_iiiiiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_iiiiij": invoke_iiiiij, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vidd": invoke_vidd, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "invoke_viiii": invoke_viiii, "invoke_viiiii": invoke_viiiii, "invoke_viiiiii": invoke_viiiiii, "invoke_viijii": invoke_viijii, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "___assert_fail": ___assert_fail, "___buildEnvironment": ___buildEnvironment, "___cxa_allocate_exception": ___cxa_allocate_exception, "___cxa_begin_catch": ___cxa_begin_catch, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "___cxa_pure_virtual": ___cxa_pure_virtual, "___cxa_throw": ___cxa_throw, "___gxx_personality_v0": ___gxx_personality_v0, "___lock": ___lock, "___map_file": ___map_file, "___resumeException": ___resumeException, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall145": ___syscall145, "___syscall146": ___syscall146, "___syscall221": ___syscall221, "___syscall5": ___syscall5, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "___syscall91": ___syscall91, "___unlock": ___unlock, "__addDays": __addDays, "__arraySum": __arraySum, "__isLeapYear": __isLeapYear, "_abort": _abort, "_emscripten_cancel_main_loop": _emscripten_cancel_main_loop, "_emscripten_get_now": _emscripten_get_now, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_emscripten_set_click_callback": _emscripten_set_click_callback, "_emscripten_set_main_loop": _emscripten_set_main_loop, "_emscripten_set_main_loop_timing": _emscripten_set_main_loop_timing, "_emscripten_set_pointerlockchange_callback": _emscripten_set_pointerlockchange_callback, "_emscripten_vr_cancel_display_render_loop": _emscripten_vr_cancel_display_render_loop, "_emscripten_vr_count_displays": _emscripten_vr_count_displays, "_emscripten_vr_exit_present": _emscripten_vr_exit_present, "_emscripten_vr_get_display_handle": _emscripten_vr_get_display_handle, "_emscripten_vr_get_display_name": _emscripten_vr_get_display_name, "_emscripten_vr_get_eye_parameters": _emscripten_vr_get_eye_parameters, "_emscripten_vr_get_frame_data": _emscripten_vr_get_frame_data, "_emscripten_vr_init": _emscripten_vr_init, "_emscripten_vr_request_present": _emscripten_vr_request_present, "_emscripten_vr_set_display_render_loop": _emscripten_vr_set_display_render_loop, "_emscripten_vr_submit_frame": _emscripten_vr_submit_frame, "_getenv": _getenv, "_glActiveTexture": _glActiveTexture, "_glAttachShader": _glAttachShader, "_glBindBuffer": _glBindBuffer, "_glBindBufferBase": _glBindBufferBase, "_glBindFramebuffer": _glBindFramebuffer, "_glBindTexture": _glBindTexture, "_glBindVertexArray": _glBindVertexArray, "_glBlendFunc": _glBlendFunc, "_glBufferData": _glBufferData, "_glBufferSubData": _glBufferSubData, "_glClear": _glClear, "_glClearColor": _glClearColor, "_glCompileShader": _glCompileShader, "_glCreateProgram": _glCreateProgram, "_glCreateShader": _glCreateShader, "_glDeleteBuffers": _glDeleteBuffers, "_glDeleteFramebuffers": _glDeleteFramebuffers, "_glDeleteShader": _glDeleteShader, "_glDeleteTextures": _glDeleteTextures, "_glDeleteVertexArrays": _glDeleteVertexArrays, "_glDepthFunc": _glDepthFunc, "_glDepthMask": _glDepthMask, "_glDetachShader": _glDetachShader, "_glDisable": _glDisable, "_glDrawBuffers": _glDrawBuffers, "_glDrawElements": _glDrawElements, "_glDrawElementsInstanced": _glDrawElementsInstanced, "_glEnable": _glEnable, "_glEnableVertexAttribArray": _glEnableVertexAttribArray, "_glFramebufferTexture2D": _glFramebufferTexture2D, "_glGenBuffers": _glGenBuffers, "_glGenFramebuffers": _glGenFramebuffers, "_glGenTextures": _glGenTextures, "_glGenVertexArrays": _glGenVertexArrays, "_glGetProgramiv": _glGetProgramiv, "_glGetShaderInfoLog": _glGetShaderInfoLog, "_glGetShaderiv": _glGetShaderiv, "_glGetUniformBlockIndex": _glGetUniformBlockIndex, "_glGetUniformLocation": _glGetUniformLocation, "_glLinkProgram": _glLinkProgram, "_glShaderSource": _glShaderSource, "_glTexImage2D": _glTexImage2D, "_glTexParameteri": _glTexParameteri, "_glUniform1fv": _glUniform1fv, "_glUniform1i": _glUniform1i, "_glUniform1ui": _glUniform1ui, "_glUniform2fv": _glUniform2fv, "_glUniform3fv": _glUniform3fv, "_glUniform4fv": _glUniform4fv, "_glUniformBlockBinding": _glUniformBlockBinding, "_glUniformMatrix4fv": _glUniformMatrix4fv, "_glUseProgram": _glUseProgram, "_glVertexAttribPointer": _glVertexAttribPointer, "_glViewport": _glViewport, "_glfwCreateWindow": _glfwCreateWindow, "_glfwGetTime": _glfwGetTime, "_glfwInit": _glfwInit, "_glfwMakeContextCurrent": _glfwMakeContextCurrent, "_glfwPollEvents": _glfwPollEvents, "_glfwSetCursorPosCallback": _glfwSetCursorPosCallback, "_glfwSetInputMode": _glfwSetInputMode, "_glfwSetMouseButtonCallback": _glfwSetMouseButtonCallback, "_glfwSetWindowSize": _glfwSetWindowSize, "_glfwSetWindowSizeCallback": _glfwSetWindowSizeCallback, "_glfwSwapBuffers": _glfwSwapBuffers, "_glfwTerminate": _glfwTerminate, "_glfwWindowHint": _glfwWindowHint, "_llvm_pow_f32": _llvm_pow_f32, "_llvm_trap": _llvm_trap, "_pthread_cond_wait": _pthread_cond_wait, "_pthread_getspecific": _pthread_getspecific, "_pthread_key_create": _pthread_key_create, "_pthread_once": _pthread_once, "_pthread_setspecific": _pthread_setspecific, "_strftime": _strftime, "_strftime_l": _strftime_l, "emscriptenWebGLComputeImageSize": emscriptenWebGLComputeImageSize, "emscriptenWebGLGetHeapForType": emscriptenWebGLGetHeapForType, "emscriptenWebGLGetShiftForType": emscriptenWebGLGetShiftForType, "emscriptenWebGLGetTexPixelData": emscriptenWebGLGetTexPixelData, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX };
 // EMSCRIPTEN_START_ASM
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
