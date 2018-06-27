@@ -21,9 +21,17 @@ jkps::gl::Mesh::Mesh()
 
 }
 
-void jkps::gl::Mesh::render()
+void jkps::gl::Mesh::render(Material* replacementMaterial)
 {
-    _renderMaterial->bind();
+	if (replacementMaterial != nullptr)
+	{
+		replacementMaterial->bind();
+	}
+	else
+	{
+		_renderMaterial->bind();
+	}
+    
 
     for (auto geo : _geometries)
     {
@@ -31,14 +39,30 @@ void jkps::gl::Mesh::render()
         geo->render(_instanceCount);
     }
 
-    _renderMaterial->unbind();
+	if (replacementMaterial != nullptr)
+	{
+		replacementMaterial->unbind();
+	}
+	else
+	{
+		_renderMaterial->unbind();
+	}
+
 }
 
-void jkps::gl::Mesh::render(const glm::mat4 & mtx)
+void jkps::gl::Mesh::render(const glm::mat4 & mtx, Material* replacementMaterial)
 {
-    _renderMaterial->setUniform(_modelUniformLocation, mtx);
+	if (replacementMaterial != nullptr)
+	{
+		replacementMaterial->setUniform(_modelUniformLocation, mtx);
+	}
+	else
+	{
+		_renderMaterial->setUniform(_modelUniformLocation, mtx);
+	}
+    
 
-    render();
+    render(replacementMaterial);
 }
 
 void jkps::gl::Mesh::setInstances(uint32_t instances)

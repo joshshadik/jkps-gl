@@ -165,7 +165,6 @@ void App::render(const glm::ivec4& viewport)
 
     _gltfModel.render(GLTFModel::Layer::Opaque);
 
-
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
     Framebuffer::bindDefaultVP(viewport);
@@ -177,10 +176,11 @@ void App::render(const glm::ivec4& viewport)
     glDepthFunc(GL_LEQUAL);
 
 
+	glDepthMask(GL_FALSE);
 	_gltfModel.render(GLTFModel::Layer::Transparent);
 
 	_sprayParticles.render();
-
+	glDepthMask(GL_TRUE);
     
 
 #ifdef _DEBUG

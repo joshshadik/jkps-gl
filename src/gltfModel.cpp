@@ -308,12 +308,12 @@ bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename
     return true;
 }
 
-void jkps::gl::GLTFModel::render(int layerFlags)
+void jkps::gl::GLTFModel::render(int layerFlags, Material* replacementMaterial)
 {
     const auto& scene = _model.scenes[_model.defaultScene];
     for (auto id : scene.nodes)
     {
-        renderTreeFromNode(id, _matrix, layerFlags);
+        renderTreeFromNode(id, _matrix, layerFlags, replacementMaterial);
     }
 }
 
@@ -327,7 +327,7 @@ void jkps::gl::GLTFModel::importNode(const tinygltf::Node & node)
     }
 }
 
-void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags)
+void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags, Material* replacementMaterial)
 {
     const auto& node = _model.nodes[nId];
 
@@ -353,6 +353,6 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
 
     for (const auto id : node.children)
     {
-        renderTreeFromNode(id, mtx, layerFlags);
+        renderTreeFromNode(id, mtx, layerFlags, replacementMaterial);
     }
 }

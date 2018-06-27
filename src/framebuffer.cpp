@@ -69,10 +69,10 @@ void jkps::gl::Framebuffer::bind()
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
     glViewport(0, 0, _size.x, _size.y);
 
-    std::vector<GLenum> attachments;
+    std::vector<GLenum> attachments(_color.size());
     for (int i = 0; i < _color.size(); ++i )
     {
-        attachments.push_back((GLenum)(GL_COLOR_ATTACHMENT0 + i));
+        attachments[i] = (GLenum)(GL_COLOR_ATTACHMENT0 + i);
     }
     glDrawBuffers(attachments.size(), attachments.data());
 }
