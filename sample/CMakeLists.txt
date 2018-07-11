@@ -39,7 +39,7 @@ if( WASM_BUILD )
         jkps-gl
     )
 
-    set(CMAKE_CXX_FLAGS "-o hello.html --preload-file resources/ -O1 -s USE_WEBGL2=1 -s USE_GLFW=3  -s ALLOW_MEMORY_GROWTH=1 -s WASM=1  -std=c++11 ${CMAKE_CXX_FLAGS} ")
+    set(CMAKE_CXX_FLAGS "--preload-file resources/ -O1 -s USE_WEBGL2=1 -s USE_GLFW=3  -s ALLOW_MEMORY_GROWTH=1 -s WASM=1  -std=c++11 ${CMAKE_CXX_FLAGS} ")
     add_definitions(-Wall -g -std=c++11)
     target_compile_definitions(jkps-sample PUBLIC USE_WASM)
 
