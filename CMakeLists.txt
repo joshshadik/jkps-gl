@@ -12,7 +12,7 @@ file(GLOB SRC_FILES
 )
 
 file(GLOB HEADER_FILES
-   "${SOURCE_PATH}/src/*.h"
+   "${SOURCE_PATH}/include/*.h"
 )
 
 add_library(jkps-gl 
@@ -21,8 +21,11 @@ add_library(jkps-gl
 )
 
 source_group(TREE "${SOURCE_PATH}/src/" PREFIX "source" FILES ${SRC_FILES})
-source_group(TREE "${SOURCE_PATH}/src/" PREFIX "headers" FILES ${HEADER_FILES})
+source_group(TREE "${SOURCE_PATH}/include/" PREFIX "headers" FILES ${HEADER_FILES})
 
+target_include_directories(jkps-gl PUBLIC
+    "${SOURCE_PATH}/include/"
+)
 
 add_library(glm INTERFACE)
 set_property(TARGET glm PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_PATH}/thirdparty/glm/include")

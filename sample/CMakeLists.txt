@@ -31,7 +31,7 @@ source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "source" FILES ${SAMPLE_SRC_FI
 source_group(TREE "${SOURCE_PATH}/sample/" PREFIX "headers" FILES ${SAMPLE_HEADER_FILES})
 
 target_include_directories(jkps-sample PUBLIC 
-"${SOURCE_PATH}/src/"
+"${SOURCE_PATH}/include/"
 )
 
 if( WASM_BUILD )
