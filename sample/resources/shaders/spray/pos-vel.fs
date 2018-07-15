@@ -38,7 +38,7 @@ void main()
         vec3 r = vec3(rand(vec2(vTexcoord.x, currentTime)), rand(vec2(vTexcoord.y, currentTime)), rand(vec2(vTexcoord.x * ( 1.0 + vTexcoord.y), currentTime))) - vec3(0.5);
         accel += (direction * (1.0 - randomness) + r * randomness) * magnitude;
         pos.w = rand(vTexcoord * (1.0 + currentTime*currentTime)) * lifetime; // * 0.5 + lifetime * 0.75;
-        pos.xyz = origin + r * randomness * 0.1;
+        pos.xyz = origin;
         vel.xyz = r * randomness;
     }
 

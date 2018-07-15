@@ -23,6 +23,7 @@ namespace jkps
             void direction(const glm::vec3& direction) { _direction = direction; }
             void magnitude(float magnitude) { _magnitude = magnitude; }
             void randomness(float randomness) { _randomness = randomness; }
+            void size(float size) { _size = size; }
 
 		private:
 			int _currentCount;
@@ -45,6 +46,7 @@ namespace jkps
             int _directionLoc;
             int _magnitudeLoc;
             int _randomnessLoc;
+            int _sizeLoc;
 
             int _renderPosTexLoc;
             int _renderTexSizeLoc;
@@ -55,6 +57,7 @@ namespace jkps
             glm::vec3 _direction;
             float _magnitude;
             float _randomness;
+            float _size;
 
 			gl::Mesh* _mesh;
 			gl::Material* _renderMaterial;

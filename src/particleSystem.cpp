@@ -46,9 +46,11 @@ void jkps::engine::ParticleSystem::init(gl::Geometry* geometry, gl::Material* re
     _directionLoc = _updateMaterial->getUniformLocation("direction");
     _magnitudeLoc = _updateMaterial->getUniformLocation("magnitude");
     _randomnessLoc = _updateMaterial->getUniformLocation("randomness");
+    
 
     _renderPosTexLoc = _renderMaterial->getUniformLocation("posTex");
     _renderTexSizeLoc = _renderMaterial->getUniformLocation("texSize");
+    _sizeLoc = _renderMaterial->getUniformLocation("size");
 
     _renderMaterial->setUniform(_renderTexSizeLoc, _maxCountSqRoot);
 }
@@ -69,6 +71,7 @@ void jkps::engine::ParticleSystem::update(double dt)
     _updateMaterial->setUniform(_magnitudeLoc, _magnitude);
     _updateMaterial->setUniform(_randomnessLoc, _randomness);
 
+
 	_fbos[_back]->bind();
 
     _updateMaterial->bind();
@@ -83,6 +86,7 @@ void jkps::engine::ParticleSystem::update(double dt)
     _front = (_front + 1) % 2;
 
 	_renderMaterial->setUniform(_renderPosTexLoc, _fbos[_front]->color(0));
+    _renderMaterial->setUniform(_sizeLoc, _size);
 }
 
 void jkps::engine::ParticleSystem::render()
