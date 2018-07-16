@@ -1,54 +1,84 @@
 #include "resourceManager.h"
 
+using namespace jkps::engine;
 using namespace jkps::gl;
 
 ResourceManager* ResourceManager::_instance = nullptr;
 
-jkps::gl::ResourceManager::ResourceManager()
+jkps::engine::ResourceManager::ResourceManager()
 {
-    _instance = this;
+    // first one created will be default
+    if (_instance == nullptr)
+    {
+        _instance = this;
+    }
 #ifdef _DEBUG
     int sz = sizeof(ResourceManager);
     printf("allocated resources size: %d bytes \n", sz);
 #endif
 }
 
-Framebuffer * jkps::gl::ResourceManager::getNextFramebuffer()
+ResourceManager * jkps::engine::ResourceManager::default()
 {
-    return &_instance->_framebuffers[_instance->_nextFrameBuffer++];
+    return _instance;
 }
 
-Geometry * jkps::gl::ResourceManager::getNextGeometry()
+Framebuffer * jkps::engine::ResourceManager::getNextFramebuffer()
 {
-    return &_instance->_geometries[_instance->_nextGeometry++];
+    return &_framebuffers[_nextFrameBuffer++];
 }
 
-Material * jkps::gl::ResourceManager::getNextMaterial()
+Geometry * jkps::engine::ResourceManager::getNextGeometry()
 {
-    return &_instance->_materials[_instance->_nextMaterial++];
+    return &_geometries[_nextGeometry++];
 }
 
-MaterialUniformBlock * jkps::gl::ResourceManager::getNextUniformBlock()
+Material * jkps::engine::ResourceManager::getNextMaterial()
 {
-    return &_instance->_ubos[_instance->_nextUbo++];
+    return &_materials[_nextMaterial++];
 }
 
-Mesh * jkps::gl::ResourceManager::getNextMesh()
+MaterialUniformBlock * jkps::engine::ResourceManager::getNextUniformBlock()
 {
-    return &_instance->_meshes[_instance->_nextMesh++];
+    return &_ubos[_nextUbo++];
 }
 
-Shader * jkps::gl::ResourceManager::getNextShader()
+Mesh * jkps::engine::ResourceManager::getNextMesh()
 {
-    return &_instance->_shaders[_instance->_nextShader++];
+    return &_meshes[_nextMesh++];
 }
 
-ShaderProgram * jkps::gl::ResourceManager::getNextShaderProgram()
+Shader * jkps::engine::ResourceManager::getNextShader()
 {
-    return &_instance->_shaderPrograms[_instance->_nextShaderProgram++];
+    return &_shaders[_nextShader++];
 }
 
-Texture * jkps::gl::ResourceManager::getNextTexture()
+ShaderProgram * jkps::engine::ResourceManager::getNextShaderProgram()
 {
-    return &_instance->_textures[_instance->_nextTexture++];
+    return &_shaderPrograms[_nextShaderProgram++];
+}
+
+Texture * jkps::engine::ResourceManager::getNextTexture()
+{
+    return &_textures[_nextTexture++];
+}
+
+Transform * jkps::engine::ResourceManager::getNextTransform()
+{
+    Transform* trans = static_cast<Transform*>(allocStack(sizeof(Transform)));
+    *trans = Transform(this);
+    return trans;
+}
+
+
+void * jkps::engine::ResourceManager::allocStack(size_t size)
+{
+    uint32_t currIndex = _nextStackByte;
+    _nextStackByte += size;
+    return &_stackBytes[currIndex];
+}
+
+void * jkps::engine::ResourceManager::allocNode(size_t size)
+{
+    return allocStack(size);
 }

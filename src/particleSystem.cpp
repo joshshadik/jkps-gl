@@ -15,18 +15,18 @@ void jkps::engine::ParticleSystem::init(gl::Geometry* geometry, gl::Material* re
     _updateMaterial = updateMaterial;
     _maxCountSqRoot = maxCountSqRoot;
 
-    _mesh = ResourceManager::getNextMesh();
+    _mesh = ResourceManager::default()->getNextMesh();
     *_mesh = Mesh(geometry, _renderMaterial);
 
     _mesh->setInstances(maxCountSqRoot * maxCountSqRoot);
 
-    _fbos[0] = ResourceManager::getNextFramebuffer();
-    _fbos[1] = ResourceManager::getNextFramebuffer();
+    _fbos[0] = ResourceManager::default()->getNextFramebuffer();
+    _fbos[1] = ResourceManager::default()->getNextFramebuffer();
 
-    Texture* tex0 = ResourceManager::getNextTexture();
-    Texture* tex1 = ResourceManager::getNextTexture();
-    Texture* tex2 = ResourceManager::getNextTexture();
-    Texture* tex3 = ResourceManager::getNextTexture();
+    Texture* tex0 = ResourceManager::default()->getNextTexture();
+    Texture* tex1 = ResourceManager::default()->getNextTexture();
+    Texture* tex2 = ResourceManager::default()->getNextTexture();
+    Texture* tex3 = ResourceManager::default()->getNextTexture();
 
     glm::ivec2 texSize = glm::ivec2(_maxCountSqRoot, _maxCountSqRoot);
     *tex0 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
@@ -34,8 +34,16 @@ void jkps::engine::ParticleSystem::init(gl::Geometry* geometry, gl::Material* re
     *tex2 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
     *tex3 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
 
-    *_fbos[0] = Framebuffer({ tex0, tex1 }, nullptr, texSize);
-    *_fbos[1] = Framebuffer({ tex2, tex3 }, nullptr, texSize);
+    NodeList<Texture*> colors0(ResourceManager::default());
+    colors0.insertBack(tex0);
+    colors0.insertBack(tex1);
+
+    NodeList<Texture*> colors1(ResourceManager::default());
+    colors1.insertBack(tex2);
+    colors1.insertBack(tex3);
+
+    *_fbos[0] = Framebuffer(colors0, nullptr, texSize);
+    *_fbos[1] = Framebuffer(colors1, nullptr, texSize);
 
     _posTexLoc = _updateMaterial->getUniformLocation("posTex");
     _velTexLoc = _updateMaterial->getUniformLocation("velTex");

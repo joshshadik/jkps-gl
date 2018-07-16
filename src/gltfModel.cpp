@@ -3,6 +3,7 @@
 #include "resourceManager.h"
 
 using namespace jkps::gl;
+using namespace jkps::engine;
 
 bool loadImageData(tinygltf::Image*, std::string*, int, int, const unsigned char*, int, void*) {
     /* Bypass tinygltf image loading and load the image on demand in image2D instead. */
@@ -45,12 +46,15 @@ int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::
 }
 
 GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
-    : _model(std::move(model))
+    : _gltfModel(std::move(model))
 {
-    _textures.reserve(_model.images.size());
-    for (int i = 0; i < _model.images.size(); ++i)
+    _model = static_cast<Model*>(ResourceManager::default()->allocStack(sizeof(Model)));
+    *_model = Model(ResourceManager::default(), ResourceManager::default()->getNextTransform());
+
+    _textures.reserve(_gltfModel.images.size());
+    for (int i = 0; i < _gltfModel.images.size(); ++i)
     {
-        const auto& image = _model.images[i];
+        const auto& image = _gltfModel.images[i];
 
         GLuint format, layout;
         switch (image.component)
@@ -65,15 +69,15 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             layout = GL_RGBA;
             break;
         }
-        auto tex = ResourceManager::getNextTexture();
+        auto tex = ResourceManager::default()->getNextTexture();
         *tex = Texture(image.image.data(), image.image.size(), glm::ivec2(image.width, image.height), format, layout);
         _textures.push_back(tex);
     }
     
-    for (int i = 0; i < _model.materials.size(); ++i )
+    for (int i = 0; i < _gltfModel.materials.size(); ++i )
     {
-        const auto& material = _model.materials[i];
-        auto mat = ResourceManager::getNextMaterial();
+        const auto& material = _gltfModel.materials[i];
+        auto mat = ResourceManager::default()->getNextMaterial();
         *mat = Material(overrideShader);
         auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
@@ -98,7 +102,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             }
 
 			glm::ivec2 size(w, h);
-            auto tex = ResourceManager::getNextTexture();
+            auto tex = ResourceManager::default()->getNextTexture();
             *tex = Texture(texData.data(), texData.size(), size, GL_RGB8, GL_RGB);
             _textures.push_back( tex);
             mat->setUniform(loc, tex);
@@ -132,7 +136,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             sizeof(glm::vec4) + sizeof(float) * 4
         };
 
-        auto ubo = ResourceManager::getNextUniformBlock();
+        auto ubo = ResourceManager::default()->getNextUniformBlock();
         *ubo = MaterialUniformBlock( pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
@@ -189,7 +193,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     }
 
     int primitiveCount = 0;
-    for (const auto& mesh : _model.meshes)
+    for (const auto& mesh : _gltfModel.meshes)
     {
         primitiveCount += mesh.primitives.size();
     }
@@ -198,9 +202,10 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     //_meshes.resize(primitiveCount);
 
     int currPrim = 0;
-    for (const auto& mesh : _model.meshes)
+    for (const auto& mesh : _gltfModel.meshes)
     {
-        MeshGroup meshGroup;
+        MeshNode meshNode { ResourceManager::default(), ResourceManager::default()->getNextTransform() };
+        Model::Layer layer;
         for (const auto& primitive : mesh.primitives)
         {
             Geometry::VertexData vBuffers;
@@ -211,9 +216,9 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 GLuint attrLoc;
                 if (Shader::getStandardAttribute(attribute.first, attrLoc))
                 {
-                    const auto& accessor = _model.accessors[attribute.second];
-                    const auto& bufferView = _model.bufferViews[accessor.bufferView];
-                    const auto& buffer = _model.buffers[bufferView.buffer];
+                    const auto& accessor = _gltfModel.accessors[attribute.second];
+                    const auto& bufferView = _gltfModel.bufferViews[accessor.bufferView];
+                    const auto& buffer = _gltfModel.buffers[bufferView.buffer];
 
                     uint32_t elementSize = tinygltf::GetTypeSizeInBytes(accessor.type);
                     std::vector<float> vData;
@@ -233,9 +238,9 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 }
             }
 
-            const auto& idxAccessor = _model.accessors[primitive.indices];
-            const auto& idxBufferView = _model.bufferViews[idxAccessor.bufferView];
-            const auto& idxBuffer = _model.buffers[idxBufferView.buffer];
+            const auto& idxAccessor = _gltfModel.accessors[primitive.indices];
+            const auto& idxBufferView = _gltfModel.bufferViews[idxAccessor.bufferView];
+            const auto& idxBuffer = _gltfModel.buffers[idxBufferView.buffer];
 
             const uint8_t* start = idxBuffer.data.data() + idxBufferView.byteOffset + idxAccessor.byteOffset;
             if (idxAccessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
@@ -251,28 +256,30 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 std::copy_n(reinterpret_cast<const uint32_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
 
-            auto geo = ResourceManager::getNextGeometry();
+            auto geo = ResourceManager::default()->getNextGeometry();
             *geo = Geometry(vBuffers, iBuffer);
 
-            auto m = ResourceManager::getNextMesh();
+            auto m = ResourceManager::default()->getNextMesh();
             *m = Mesh(geo, _materials[primitive.material]);
 
-            meshGroup.first.push_back(m);
-			meshGroup.second = _materials[primitive.material]->isBlended() ? Layer::Transparent : Layer::Opaque;
+            meshNode.addMesh(m);
+            layer = _materials[primitive.material]->isBlended() ? Model::Layer::Transparent : Model::Layer::Opaque;
             ++currPrim;
         }
-        _meshGroups.push_back(std::move(meshGroup));
+        _meshGroups.push_back(std::make_pair(meshNode, layer));
         
     }
 
-    const auto& scene = _model.scenes[_model.defaultScene];
-
+    const auto& scene = _gltfModel.scenes[_gltfModel.defaultScene];
+    _model->root()->setLocal(_matrix);
     for (const auto nId : scene.nodes) // todo : more than default scene
     {
-        const auto& node = _model.nodes[nId];
+        const auto& node = _gltfModel.nodes[nId];
 
-        importNode(node);
+        importNode(node, _model->root());
     }
+
+    _model->update(0.0f);
 }
 
 bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename, ShaderProgram* overrideShader)
@@ -308,29 +315,14 @@ bool GLTFModel::loadFromFile(GLTFModel* gltfModel, const std::string && filename
     return true;
 }
 
-void jkps::gl::GLTFModel::render(int layerFlags, Material* replacementMaterial)
+void jkps::engine::GLTFModel::render(int layerFlags, Material* replacementMaterial)
 {
-    const auto& scene = _model.scenes[_model.defaultScene];
-    for (auto id : scene.nodes)
-    {
-        renderTreeFromNode(id, _matrix, layerFlags, replacementMaterial);
-    }
+    _model->update(0.0f);
+    _model->render(layerFlags);
 }
 
-void jkps::gl::GLTFModel::importNode(const tinygltf::Node & node)
+void jkps::engine::GLTFModel::importNode(const tinygltf::Node & node, Transform* parent)
 {
-
-    for (const auto nId : node.children)
-    {
-        const auto& n = _model.nodes[nId];
-        importNode(n);
-    }
-}
-
-void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx, int layerFlags, Material* replacementMaterial)
-{
-    const auto& node = _model.nodes[nId];
-
     glm::mat4 mtx;
 
     if (node.matrix.size() == 16)
@@ -338,21 +330,28 @@ void jkps::gl::GLTFModel::renderTreeFromNode(int nId, const glm::mat4& parentMtx
         std::copy_n(node.matrix.data(), 16, reinterpret_cast<float*>(&mtx));
     }
 
-    mtx = parentMtx * mtx;
+    //mtx = parentMtx * mtx;
+
+    Transform* curr = nullptr;
 
     if (node.mesh >= 0)
     {
-		if ((_meshGroups[node.mesh].second & layerFlags) != 0)
-		{
-			for (auto& mesh : _meshGroups[node.mesh].first)
-			{
-				mesh->render(mtx);
-			}
-		}
+        curr = _meshGroups[node.mesh].first.transform();
+        _model->addMesh(_meshGroups[node.mesh].first, _meshGroups[node.mesh].second);
+    }
+    else
+    {
+        curr = ResourceManager::default()->getNextTransform();
     }
 
-    for (const auto id : node.children)
+    parent->addChild(curr);
+
+    curr->setLocal(mtx);
+
+    for (const auto nId : node.children)
     {
-        renderTreeFromNode(id, mtx, layerFlags, replacementMaterial);
+        const auto& n = _gltfModel.nodes[nId];
+        importNode(n, curr);
     }
 }
+

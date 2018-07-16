@@ -28,7 +28,7 @@ void App::init()
 
     printf("size of descriptor: %d\n", globalDescriptor.second);
 
-    _globalUniformBlock = ResourceManager::getNextUniformBlock();
+    _globalUniformBlock = ResourceManager::default()->getNextUniformBlock();
 
     *_globalUniformBlock = MaterialUniformBlock(globalDescriptor);
     _globalUniformBlock->setValue("view", &_gUniforms.view, sizeof(glm::mat4));
@@ -39,19 +39,19 @@ void App::init()
 
     _globalUniformBlock->bind(0);
 
-    vs = ResourceManager::getNextShader();
-    fs = ResourceManager::getNextShader();
+    vs = ResourceManager::default()->getNextShader();
+    fs = ResourceManager::default()->getNextShader();
 
     Shader::loadFromFile(vs, "resources/shaders/standard.vs", Shader::Vertex); 
     Shader::loadFromFile(fs, "resources/shaders/standard.fs", Shader::Fragment);
 
-    program = ResourceManager::getNextShaderProgram();
+    program = ResourceManager::default()->getNextShaderProgram();
     *program = ShaderProgram(vs, fs);
 
-    material = ResourceManager::getNextMaterial();
+    material = ResourceManager::default()->getNextMaterial();
     *material = Material(program);
 
-    boxMesh = ResourceManager::getNextMesh();
+    boxMesh = ResourceManager::default()->getNextMesh();
     *boxMesh = Mesh(_quadGeo, material);
 
     _modelPos = glm::vec3(0.0f, 0.5f, 0.0f);
@@ -65,20 +65,20 @@ void App::init()
 
     //_gltfModel.setMatrix(glm::rotate(glm::mat4(1.0f), -1.57f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
-    Shader* sprayUpdateVS = ResourceManager::getNextShader();
-    Shader* sprayUpdateFS = ResourceManager::getNextShader();
-    Shader* sprayRenderVS = ResourceManager::getNextShader();
-    Shader* sprayRenderFS = ResourceManager::getNextShader();
+    Shader* sprayUpdateVS = ResourceManager::default()->getNextShader();
+    Shader* sprayUpdateFS = ResourceManager::default()->getNextShader();
+    Shader* sprayRenderVS = ResourceManager::default()->getNextShader();
+    Shader* sprayRenderFS = ResourceManager::default()->getNextShader();
 
     Shader::loadFromFile(sprayUpdateVS, "resources/shaders/screen.vs", Shader::Vertex);
     Shader::loadFromFile(sprayUpdateFS, "resources/shaders/spray/pos-vel.fs", Shader::Fragment);
     Shader::loadFromFile(sprayRenderVS, "resources/shaders/spray/particle.vs", Shader::Vertex);
     Shader::loadFromFile(sprayRenderFS, "resources/shaders/spray/particle.fs", Shader::Fragment);
 
-    ShaderProgram* updateProgram = ResourceManager::getNextShaderProgram();
-    ShaderProgram* sprayProgram = ResourceManager::getNextShaderProgram();
-    Material* updateMaterial = ResourceManager::getNextMaterial();
-    _sprayMaterial = ResourceManager::getNextMaterial();
+    ShaderProgram* updateProgram = ResourceManager::default()->getNextShaderProgram();
+    ShaderProgram* sprayProgram = ResourceManager::default()->getNextShaderProgram();
+    Material* updateMaterial = ResourceManager::default()->getNextMaterial();
+    _sprayMaterial = ResourceManager::default()->getNextMaterial();
 
     *updateProgram = ShaderProgram(sprayUpdateVS, sprayUpdateFS);
     *sprayProgram = ShaderProgram(sprayRenderVS, sprayRenderFS);
@@ -97,17 +97,18 @@ void App::init()
     _sprayParticles.magnitude(20.0f);
     _sprayParticles.randomness(0.15f);
     _sprayParticles.origin(glm::vec3(-0.5f, 0.5f, 0.0f));
+    _sprayParticles.size(0.005f);
 
 
-    composeVS = ResourceManager::getNextShader();
-    composeFS = ResourceManager::getNextShader();
+    composeVS = ResourceManager::default()->getNextShader();
+    composeFS = ResourceManager::default()->getNextShader();
 
     Shader::loadFromFile(composeVS, "resources/shaders/compose.vs", Shader::Vertex);
     Shader::loadFromFile(composeFS, "resources/shaders/compose.fs", Shader::Fragment);
 
-    composeProgram = ResourceManager::getNextShaderProgram();
-    _composeMaterial = ResourceManager::getNextMaterial();
-    _composeMesh = ResourceManager::getNextMesh();
+    composeProgram = ResourceManager::default()->getNextShaderProgram();
+    _composeMaterial = ResourceManager::default()->getNextMaterial();
+    _composeMesh = ResourceManager::default()->getNextMesh();
 
     *composeProgram = ShaderProgram(composeVS, composeFS);
     *_composeMaterial = Material(composeProgram);
@@ -115,12 +116,12 @@ void App::init()
 
     for (int i = 0; i < 4; ++i)
     {
-        _colorScreenTextures.push_back(ResourceManager::getNextTexture());
+        _colorScreenTextures[i] = ResourceManager::default()->getNextTexture();
     }
 
-    _depthTexture = ResourceManager::getNextTexture();
+    _depthTexture = ResourceManager::default()->getNextTexture();
 
-    _screenBuffer = ResourceManager::getNextFramebuffer();
+    _screenBuffer = ResourceManager::default()->getNextFramebuffer();
 
     int depthLoc = _composeMaterial->getUniformLocation("uDepthTex");
 
@@ -135,7 +136,7 @@ void App::init()
 	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uDepthTex"), _depthTexture);
 
 
-    Texture* sky = ResourceManager::getNextTexture();
+    Texture* sky = ResourceManager::default()->getNextTexture();
 	Texture::loadFromFile(sky, "resources/textures/241-sky.png", 3);
 
 	_composeMaterial->setUniform(_composeMaterial->getUniformLocation("uSkyTex"), sky);
@@ -163,7 +164,7 @@ void App::render(const glm::ivec4& viewport)
     glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _gltfModel.render(GLTFModel::Layer::Opaque);
+    _gltfModel.render(Model::Layer::Opaque);
 
     //boxMesh->render(glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -1.0)));
 
@@ -177,7 +178,7 @@ void App::render(const glm::ivec4& viewport)
 
 
 	glDepthMask(GL_FALSE);
-	_gltfModel.render(GLTFModel::Layer::Transparent);
+	_gltfModel.render(Model::Layer::Transparent);
 
 	_sprayParticles.render();
 	glDepthMask(GL_TRUE);
@@ -229,6 +230,8 @@ void App::setControls(Controls * controls)
 
 void App::resize(const glm::ivec2 & size)
 {
+    static bool firstResize = true;
+
     _screenSize = size;
 
     _gUniforms.projection = glm::perspective(1.2f, size.x / (float)size.y, 1.f, 30.0f);
@@ -240,6 +243,8 @@ void App::resize(const glm::ivec2 & size)
 
     _globalUniformBlock->uploadData();
 
+
+
     *_colorScreenTextures[0] = Texture(size, GL_RGBA8, GL_RGBA);
     *_colorScreenTextures[1] = Texture(size, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     *_colorScreenTextures[2] = Texture(size, GL_RGBA8, GL_RGBA);
@@ -247,12 +252,39 @@ void App::resize(const glm::ivec2 & size)
 
     *_depthTexture = Texture( size, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
 
-    *_screenBuffer = Framebuffer(_colorScreenTextures, _depthTexture, size);
+    if (firstResize)
+    {
+        NodeList<Texture*> colors0(ResourceManager::default());
+        for (int i = 0; i < 4; ++i)
+        {
+            colors0.insertBack(_colorScreenTextures[i]);
+        }
+
+        *_screenBuffer = Framebuffer(colors0, _depthTexture, size);
+    }
+    else
+    {
+        auto iter = _screenBuffer->colors()->iter();
+        if (iter->begin())
+        {
+            int curr = 0;
+            do
+            {
+                iter->assign(_colorScreenTextures[curr]);
+                ++curr;
+            } while (iter->next());
+        }
+    }
 
     Framebuffer::bindDefault();
 
      int loc = _sprayMaterial->getUniformLocation("screenSize");
     _sprayMaterial->setUniform(loc, glm::vec2(_screenSize));
+
+    if (firstResize)
+    {
+        firstResize = false;
+    }
 }
 
 void App::overrideViewProjection(const glm::mat4 & view, const glm::mat4 & projection)

@@ -6,6 +6,8 @@
 #include "mesh.h"
 #include "shader.h"
 #include "texture.h"
+#include "nodeList.h"
+#include "transform.h"
 
 #include <array>
 
@@ -20,25 +22,35 @@
 #define SHADER_COUNT 32
 #define SHADERPROGRAM_COUNT 16
 #define TEXTURE_COUNT 64
+#define STACK_BYTE_COUNT 8192
 #endif
+
+using namespace jkps::gl;
+using namespace jkps::util;
 
 namespace jkps
 {
-    namespace gl
+    namespace engine
     {
-        class ResourceManager
+        class ResourceManager : public INodeAllocator
         {
         public:
             ResourceManager();
 
-            static Framebuffer* getNextFramebuffer();
-            static Geometry* getNextGeometry();
-            static Material* getNextMaterial();
-            static MaterialUniformBlock* getNextUniformBlock();
-            static Mesh* getNextMesh();
-            static Shader* getNextShader();
-            static ShaderProgram* getNextShaderProgram();
-            static Texture* getNextTexture();
+            static ResourceManager* default();
+
+            Framebuffer* getNextFramebuffer();
+            Geometry* getNextGeometry();
+            Material* getNextMaterial();
+            MaterialUniformBlock* getNextUniformBlock();
+            Mesh* getNextMesh();
+            Shader* getNextShader();
+            ShaderProgram* getNextShaderProgram();
+            Texture* getNextTexture();
+            Transform* getNextTransform();
+
+            void* allocStack(size_t size);
+            void* allocNode(size_t size);
 
         private:
 
@@ -53,6 +65,8 @@ namespace jkps
             std::array<ShaderProgram, SHADERPROGRAM_COUNT> _shaderPrograms;
             std::array<Texture, TEXTURE_COUNT> _textures;
 
+            std::array<uint8_t, STACK_BYTE_COUNT> _stackBytes;
+
             uint32_t _nextFrameBuffer = 0;
             uint32_t _nextGeometry = 0;
             uint32_t _nextMaterial = 0;
@@ -61,6 +75,11 @@ namespace jkps
             uint32_t _nextShaderProgram = 0;
             uint32_t _nextTexture = 0;
             uint32_t _nextUbo = 0;
+            uint32_t _nextTransform = 0;
+            uint32_t _nextNode = 0;
+
+            uint32_t _nextStackByte = 0;
         };
+
     }
 }

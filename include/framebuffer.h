@@ -1,6 +1,7 @@
 #pragma once
 
 #include "texture.h"
+#include "nodeList.h"
 
 #ifdef USE_WASM
 #include <GLES3/gl3.h>
@@ -19,14 +20,16 @@ namespace jkps
         class Framebuffer
         {
         public:
-            Framebuffer(std::vector<Texture*> color, Texture* depth, const glm::ivec2& size);
+            Framebuffer(util::NodeList<Texture*> color, Texture* depth, const glm::ivec2& size);
             Framebuffer();
             ~Framebuffer();
 
             Framebuffer(Framebuffer&& fb);
             Framebuffer& operator=(Framebuffer&& fb);
 
+            util::NodeList<Texture*>* colors() { return &_color; }
             Texture* color(int index = 0) { return _color.at(index); }
+
             Texture* depth() { return _depth; }
             GLuint id() { return _fboId; }
 
@@ -42,7 +45,7 @@ namespace jkps
             GLuint _fboId;
 
             glm::ivec2 _size;
-            std::vector<Texture*> _color;
+            util::NodeList<Texture*> _color;
             Texture* _depth;
 
             bool _valid = false;

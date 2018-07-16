@@ -2,9 +2,11 @@
 
 #include "geometry.h"
 
+using namespace jkps::gl;
+
 namespace jkps
 {
-    namespace gl
+    namespace engine
     {
         class Primitives
         {

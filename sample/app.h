@@ -27,6 +27,7 @@
 #include <memory>
 
 using namespace jkps::gl;
+using namespace jkps::engine;
 
 struct GlobalUniforms
 {
@@ -84,7 +85,7 @@ private:
 
     GlobalUniforms _gUniforms;
     MaterialUniformBlock* _globalUniformBlock;
-    std::vector<Texture*> _colorScreenTextures;
+    std::array<Texture*, 4> _colorScreenTextures;
     Texture* _depthTexture;
 
     Controls* _controls;

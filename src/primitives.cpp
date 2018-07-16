@@ -2,12 +2,13 @@
 #include "resourceManager.h"
 
 using namespace jkps::gl;
+using namespace jkps::engine;
 
-Geometry* jkps::gl::Primitives::_quad = nullptr;
+Geometry* jkps::engine::Primitives::_quad = nullptr;
 
-void jkps::gl::Primitives::init()
+void jkps::engine::Primitives::init()
 {
-    _quad = ResourceManager::getNextGeometry();
+    _quad = ResourceManager::default()->getNextGeometry();
 
     std::vector<float> quadVertices{
         -1.0f, -1.0f, -1.0f,

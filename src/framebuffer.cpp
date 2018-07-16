@@ -2,18 +2,26 @@
 
 
 using namespace jkps::gl;
+using namespace jkps::util;
 
-jkps::gl::Framebuffer::Framebuffer(std::vector<Texture*> color, Texture* depth, const glm::ivec2 & size)
+jkps::gl::Framebuffer::Framebuffer(NodeList<Texture*> color, Texture* depth, const glm::ivec2 & size)
+    : _color(color)
+    , _depth(depth)
+    , _size(size)
 {
     glGenFramebuffers(1, &_fboId);
-    _color = color;
-    _depth = depth;
-    _size = size;
 
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
-    for (int i = 0; i < _color.size(); ++i)
-    {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, _color.at(i)->id(), 0);
+
+    int i = 0;
+    auto iter = _color.iter();
+    if (iter->begin())
+    {   
+        do
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, iter->current()->id(), 0);
+            ++i;
+        } while (iter->next());
     }
 
     if (_depth)
@@ -24,6 +32,7 @@ jkps::gl::Framebuffer::Framebuffer(std::vector<Texture*> color, Texture* depth, 
 
 jkps::gl::Framebuffer::Framebuffer()
     : _valid(false)
+    , _color(NodeList<Texture*>(nullptr))
 {
 
 }
