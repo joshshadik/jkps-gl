@@ -17,7 +17,7 @@ void jkps::engine::Model::update(float dt)
     _root->update();
 }
 
-void jkps::engine::Model::render(uint32_t layerFlags)
+void jkps::engine::Model::render(uint32_t layerFlags, Material* replacementMaterial)
 {
     auto iter = _meshGroups.iter();
     if (iter->begin())
@@ -32,7 +32,7 @@ void jkps::engine::Model::render(uint32_t layerFlags)
                 {
                     do
                     {
-                        meshIter->current().render();
+                        meshIter->current().render(replacementMaterial);
                     } while (meshIter->next());
                 }
             }
@@ -60,4 +60,23 @@ void jkps::engine::Model::addMesh(MeshNode & meshNode, Layer layer)
 
 
     _meshGroups.insertBack(std::make_pair(layer, MeshList({ meshNode }, _meshGroups.allocator())));
+}
+
+jkps::engine::Model::MeshList* jkps::engine::Model::getMeshes(Layer layer)
+{
+	auto iter = _meshGroups.iter();
+	if (iter->begin())
+	{
+		do
+		{
+			auto& curr = iter->current();
+			if (curr.first == layer)
+			{
+				return &curr.second;
+			}
+
+		} while (iter->next());
+	}
+
+	return nullptr;
 }

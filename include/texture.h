@@ -30,6 +30,13 @@ namespace jkps
             void bind();
             void unbind();
 
+			const glm::vec2& size() { return _size; }
+			GLuint format() { return _format; }
+			GLuint layout() { return _layout; }
+			GLenum dataType() { return _dataType; }
+			GLint magFilter() { return _magFilter; }
+			GLint minFilter() { return _minFilter; }
+
 			static void loadFromFile(Texture* texture, const std::string& filePath, int channels);
 
             GLuint id() { return _textureID; }
@@ -41,6 +48,12 @@ namespace jkps
             GLuint _textureID;
             bool _valid = true;
 
+			glm::vec2 _size;
+			GLuint _format;
+			GLuint _layout;
+			GLenum _dataType;
+			GLint _magFilter;
+			GLint _minFilter;
         };
 
     }

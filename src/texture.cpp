@@ -9,6 +9,12 @@
 using namespace jkps::gl;
 
 Texture::Texture(const uint8_t* data, const int dataSize, const glm::ivec2& size, GLuint format, GLuint layout, GLenum dataType, GLint magFilter, GLint minFilter)
+	: _size(size)
+	, _format(format)
+	, _layout(layout)
+	, _dataType(dataType)
+	, _magFilter(magFilter)
+	, _minFilter(minFilter)
 {
     glGenTextures(1, &_textureID);
     bind();
@@ -47,6 +53,12 @@ Texture::~Texture()
 jkps::gl::Texture::Texture(Texture && tex)
     : _textureID(tex._textureID)
     , _valid(tex._valid)
+	, _size(tex._size)
+	, _layout(tex._layout)
+	, _format(tex._format)
+	, _dataType(tex._dataType)
+	, _magFilter(tex._magFilter)
+	, _minFilter(tex._minFilter)
 {
     tex._valid = false;
 }
@@ -60,6 +72,13 @@ Texture & jkps::gl::Texture::operator=(Texture && tex)
 
     _textureID = tex._textureID;
     _valid = tex._valid;
+	_size = tex._size;
+	_layout = tex._layout;
+	_format = tex._format;
+	_dataType = tex._dataType;
+	_magFilter = tex._magFilter;
+	_minFilter = tex._minFilter;
+
     tex._valid = false;
 
     return *this;

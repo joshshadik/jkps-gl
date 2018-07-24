@@ -31,7 +31,6 @@ void jkps::gl::Mesh::render(Material* replacementMaterial)
 	{
 		_renderMaterial->bind();
 	}
-    
 
     for (auto geo : _geometries)
     {
@@ -47,20 +46,20 @@ void jkps::gl::Mesh::render(Material* replacementMaterial)
 	{
 		_renderMaterial->unbind();
 	}
-
+	
 }
 
 void jkps::gl::Mesh::render(const glm::mat4 & mtx, Material* replacementMaterial)
 {
 	if (replacementMaterial != nullptr)
 	{
-		replacementMaterial->setUniform(_modelUniformLocation, mtx);
+		replacementMaterial->setUniform(replacementMaterial->getUniformLocation("model"), mtx);
 	}
 	else
 	{
 		_renderMaterial->setUniform(_modelUniformLocation, mtx);
 	}
-    
+
 
     render(replacementMaterial);
 }

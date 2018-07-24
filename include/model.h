@@ -25,9 +25,11 @@ namespace jkps
             Model(std::initializer_list<std::pair<Layer, MeshList>> meshGroupNodes, INodeAllocator* allocator, Transform* root);
 
             void update(float dt);
-            void render(uint32_t layerFlags = ~0);
+            void render(uint32_t layerFlags = ~0, Material* replacementMaterial = nullptr);
 
             void addMesh(MeshNode& meshNode, Layer layer);
+
+			MeshList* getMeshes(Layer layer);
 
             Transform* root() { return _root; }
 

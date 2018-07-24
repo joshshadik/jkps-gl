@@ -17,7 +17,7 @@ namespace jkps
             MeshNode(INodeAllocator* allocator, Transform* transform);
             MeshNode(NodeList<Mesh*> meshes, Transform* transform);
 
-            void render();
+            void render(Material* replacementMaterial = nullptr);
 
             void addMesh(Mesh* mesh);
 

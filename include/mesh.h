@@ -20,6 +20,8 @@ namespace jkps
 
             void setInstances(uint32_t instances);
 
+			Material* material() { return _renderMaterial; }
+
         private:
             std::vector<Geometry*> _geometries;
             Material* _renderMaterial;

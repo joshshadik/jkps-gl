@@ -14,14 +14,14 @@ jkps::engine::MeshNode::MeshNode(NodeList<Mesh*> meshes, Transform * transform)
 {
 }
 
-void jkps::engine::MeshNode::render()
+void jkps::engine::MeshNode::render(Material* replacementMaterial)
 {
     auto iter = _meshes.iter();
     if (iter->begin())
     {
         do
         {
-            iter->current()->render(_transform->worldMatrix());
+            iter->current()->render(_transform->worldMatrix(), replacementMaterial);
         } while (iter->next());
     }
 }

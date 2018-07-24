@@ -41,6 +41,7 @@ namespace jkps
 
             void render(int layerFlags = ~0, Material* replacementMaterial = nullptr);
             void setMatrix(const glm::mat4& mtx) { _model->root()->setLocal(mtx); }
+			Model* model() { return _model; }
 
         private:
             void importNode(const tinygltf::Node& node, Transform* parent);

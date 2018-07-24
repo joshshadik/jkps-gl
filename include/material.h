@@ -131,9 +131,11 @@ namespace jkps
             void setBlended(bool blend) { _blended = blend; }
             void setBlendFunction(GLenum src, GLenum dst) { _blendSrc = src; _blendDst = dst; }
 
+			Texture* getTexture(GLint location);
+
 			bool isBlended() { return _blended; }
 
-            void bind();
+            void bind(ShaderProgram* replacementProgram = nullptr);
             void unbind();
 
         private:

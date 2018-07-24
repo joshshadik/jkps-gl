@@ -188,9 +188,22 @@ void jkps::gl::Material::setUniform(GLint location, Texture* tex)
     _textures[location] = tex;
 }
 
-void jkps::gl::Material::bind()
+Texture * jkps::gl::Material::getTexture(GLint location)
 {
-    _program->bind();
+	return _textures[location];
+}
+
+void jkps::gl::Material::bind(ShaderProgram* replacementProgram)
+{
+	if (replacementProgram != nullptr)
+	{
+		replacementProgram->bind();
+	}
+	else
+	{
+		_program->bind();
+	}
+    
 
     if (_blended)
     {
