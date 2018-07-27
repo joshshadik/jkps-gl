@@ -8,7 +8,7 @@ Geometry* jkps::engine::Primitives::_quad = nullptr;
 
 void jkps::engine::Primitives::init()
 {
-    _quad = ResourceManager::default()->getNextGeometry();
+    _quad = ResourceManager::global()->getNextGeometry();
 
     std::vector<float> quadVertices{
         -1.0f, -1.0f, -1.0f,

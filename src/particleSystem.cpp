@@ -15,18 +15,18 @@ void jkps::engine::ParticleSystem::init(gl::Geometry* geometry, gl::Material* re
     _updateMaterial = updateMaterial;
     _maxCountSqRoot = maxCountSqRoot;
 
-    _mesh = ResourceManager::default()->getNextMesh();
+    _mesh = ResourceManager::global()->getNextMesh();
     *_mesh = Mesh(geometry, _renderMaterial);
 
     _mesh->setInstances(maxCountSqRoot * maxCountSqRoot);
 
-    _fbos[0] = ResourceManager::default()->getNextFramebuffer();
-    _fbos[1] = ResourceManager::default()->getNextFramebuffer();
+    _fbos[0] = ResourceManager::global()->getNextFramebuffer();
+    _fbos[1] = ResourceManager::global()->getNextFramebuffer();
 
-    Texture* tex0 = ResourceManager::default()->getNextTexture();
-    Texture* tex1 = ResourceManager::default()->getNextTexture();
-    Texture* tex2 = ResourceManager::default()->getNextTexture();
-    Texture* tex3 = ResourceManager::default()->getNextTexture();
+    Texture* tex0 = ResourceManager::global()->getNextTexture();
+    Texture* tex1 = ResourceManager::global()->getNextTexture();
+    Texture* tex2 = ResourceManager::global()->getNextTexture();
+    Texture* tex3 = ResourceManager::global()->getNextTexture();
 
     glm::ivec2 texSize = glm::ivec2(_maxCountSqRoot, _maxCountSqRoot);
     *tex0 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
@@ -34,11 +34,11 @@ void jkps::engine::ParticleSystem::init(gl::Geometry* geometry, gl::Material* re
     *tex2 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
     *tex3 = Texture(texSize, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST);
 
-    NodeList<Texture*> colors0(ResourceManager::default());
+    NodeList<Texture*> colors0(ResourceManager::global());
     colors0.insertBack(tex0);
     colors0.insertBack(tex1);
 
-    NodeList<Texture*> colors1(ResourceManager::default());
+    NodeList<Texture*> colors1(ResourceManager::global());
     colors1.insertBack(tex2);
     colors1.insertBack(tex3);
 

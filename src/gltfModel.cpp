@@ -48,8 +48,8 @@ int getTextureIndex(const tinygltf::Material& material, tinygltf::ExtensionMap::
 GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     : _gltfModel(std::move(model))
 {
-    _model = static_cast<Model*>(ResourceManager::default()->allocStack(sizeof(Model)));
-    *_model = Model(ResourceManager::default(), ResourceManager::default()->getNextTransform());
+    _model = static_cast<Model*>(ResourceManager::global()->allocStack(sizeof(Model)));
+    *_model = Model(ResourceManager::global(), ResourceManager::global()->getNextTransform());
 
     _textures.reserve(_gltfModel.images.size());
     for (int i = 0; i < _gltfModel.images.size(); ++i)
@@ -69,7 +69,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             layout = GL_RGBA;
             break;
         }
-        auto tex = ResourceManager::default()->getNextTexture();
+        auto tex = ResourceManager::global()->getNextTexture();
         *tex = Texture(image.image.data(), image.image.size(), glm::ivec2(image.width, image.height), format, layout);
         _textures.push_back(tex);
     }
@@ -77,7 +77,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     for (int i = 0; i < _gltfModel.materials.size(); ++i )
     {
         const auto& material = _gltfModel.materials[i];
-        auto mat = ResourceManager::default()->getNextMaterial();
+        auto mat = ResourceManager::global()->getNextMaterial();
         *mat = Material(overrideShader);
         auto pbrExt = material.extensions.find("KHR_materials_pbrSpecularGlossiness");
 
@@ -90,8 +90,8 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         }
         else
         {
-			static constexpr int w = 512;
-			static constexpr int h = 512;
+			static constexpr int w = 1024;
+			static constexpr int h = 1024;
 			static constexpr int dataSize = w * h * 3;
 
 			static std::array<uint8_t, dataSize> texData;   
@@ -102,7 +102,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             }
 
 			glm::ivec2 size(w, h);
-            auto tex = ResourceManager::default()->getNextTexture();
+            auto tex = ResourceManager::global()->getNextTexture();
             *tex = Texture(texData.data(), texData.size(), size, GL_RGB8, GL_RGB);
             _textures.push_back( tex);
             mat->setUniform(loc, tex);
@@ -136,7 +136,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
             sizeof(glm::vec4) + sizeof(float) * 4
         };
 
-        auto ubo = ResourceManager::default()->getNextUniformBlock();
+        auto ubo = ResourceManager::global()->getNextUniformBlock();
         *ubo = MaterialUniformBlock( pbrDescriptor);
 
         if (pbrExt != material.extensions.end())
@@ -204,7 +204,7 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     int currPrim = 0;
     for (const auto& mesh : _gltfModel.meshes)
     {
-        MeshNode meshNode { ResourceManager::default(), ResourceManager::default()->getNextTransform() };
+        MeshNode meshNode { ResourceManager::global(), ResourceManager::global()->getNextTransform() };
         Model::Layer layer;
         for (const auto& primitive : mesh.primitives)
         {
@@ -256,10 +256,10 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
                 std::copy_n(reinterpret_cast<const uint32_t*>(start), idxAccessor.count, std::back_inserter(iBuffer));
             }
 
-            auto geo = ResourceManager::default()->getNextGeometry();
+            auto geo = ResourceManager::global()->getNextGeometry();
             *geo = Geometry(vBuffers, iBuffer);
 
-            auto m = ResourceManager::default()->getNextMesh();
+            auto m = ResourceManager::global()->getNextMesh();
             *m = Mesh(geo, _materials[primitive.material]);
 
             meshNode.addMesh(m);
@@ -341,7 +341,7 @@ void jkps::engine::GLTFModel::importNode(const tinygltf::Node & node, Transform*
     }
     else
     {
-        curr = ResourceManager::default()->getNextTransform();
+        curr = ResourceManager::global()->getNextTransform();
     }
 
     parent->addChild(curr);

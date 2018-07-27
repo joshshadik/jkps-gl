@@ -37,7 +37,7 @@ namespace jkps
         public:
             ResourceManager();
 
-            static ResourceManager* default();
+            static ResourceManager* global();
 
             Framebuffer* getNextFramebuffer();
             Geometry* getNextGeometry();

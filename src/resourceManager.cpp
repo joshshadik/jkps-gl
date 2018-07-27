@@ -18,7 +18,7 @@ jkps::engine::ResourceManager::ResourceManager()
 #endif
 }
 
-ResourceManager * jkps::engine::ResourceManager::default()
+ResourceManager * jkps::engine::ResourceManager::global()
 {
     return _instance;
 }
