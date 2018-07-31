@@ -70,6 +70,7 @@ namespace jkps
             NodeList(INodeAllocator* allocator)
                 : _allocator(allocator)
                 , _head(nullptr)
+                , _tail(nullptr)
                 , _iterator(this)
                 , _size(0)
             {
@@ -79,6 +80,7 @@ namespace jkps
             NodeList(std::initializer_list<T> initList, INodeAllocator* allocator)
                 : _allocator(allocator)
                 , _head(nullptr)
+                , _tail(nullptr)
                 , _iterator(this)
                 , _size(0)
             {
@@ -91,6 +93,7 @@ namespace jkps
             NodeList(const NodeList& list)
                 : _allocator(list._allocator)
                 , _head(list._head)
+                , _tail(list._tail)
                 , _iterator(this)
                 , _size(list._size)
             {
@@ -101,6 +104,7 @@ namespace jkps
             {
                 _allocator = list._allocator;
                 _head = list._head;
+                _tail = list._tail;
                 _iterator = Iterator(this);
                 _size = list._size;
 

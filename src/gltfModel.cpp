@@ -51,6 +51,26 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
     _model = static_cast<Model*>(ResourceManager::global()->allocStack(sizeof(Model)));
     *_model = Model(ResourceManager::global(), ResourceManager::global()->getNextTransform());
 
+    static Texture* whiteTex = nullptr;
+    if( whiteTex == nullptr)
+    {
+        static constexpr int w = 1024;
+        static constexpr int h = 1024;
+        static constexpr int dataSize = w * h * 3;
+
+        static std::array<uint8_t, dataSize> texData;   
+
+        for (int i = 0; i < dataSize; ++i)
+        {
+            texData[i] = 255;
+        }
+
+        glm::ivec2 size(w, h);
+        whiteTex = ResourceManager::global()->getNextTexture();
+        *whiteTex = Texture(texData.data(), texData.size(), size, GL_RGB8, GL_RGB);
+    }
+
+
     _textures.reserve(_gltfModel.images.size());
     for (int i = 0; i < _gltfModel.images.size(); ++i)
     {
@@ -59,6 +79,16 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         GLuint format, layout;
         switch (image.component)
         {
+        case 1:
+            format = GL_R8;
+            layout = GL_RED;
+            break;
+
+        case 2:
+            format = GL_RG8;
+            layout = GL_RG;
+            break;
+
         case 3:
             format = GL_RGB8;
             layout = GL_RGB;
@@ -90,22 +120,9 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         }
         else
         {
-			static constexpr int w = 1024;
-			static constexpr int h = 1024;
-			static constexpr int dataSize = w * h * 3;
 
-			static std::array<uint8_t, dataSize> texData;   
-
-            for (int i = 0; i < dataSize; ++i)
-            {
-                texData[i] = 255;
-            }
-
-			glm::ivec2 size(w, h);
-            auto tex = ResourceManager::global()->getNextTexture();
-            *tex = Texture(texData.data(), texData.size(), size, GL_RGB8, GL_RGB);
-            _textures.push_back( tex);
-            mat->setUniform(loc, tex);
+            _textures.push_back( whiteTex);
+            mat->setUniform(loc, whiteTex);
         }
 
         int normalIndex = getTextureIndex(material, pbrExt, "normalTexture", "normalTexture");
@@ -123,6 +140,11 @@ GLTFModel::GLTFModel(tinygltf::Model&& model, ShaderProgram* overrideShader)
         if (occIndex >= 0)
         {
             mat->setUniform(oLoc, _textures[occIndex]);
+        }
+        else
+        {
+            _textures.push_back( whiteTex);
+            mat->setUniform(oLoc, whiteTex);
         }
 
         glm::vec4 diffuseFactorColor{ 1.0f, 1.0f, 1.0f, 1.0f };

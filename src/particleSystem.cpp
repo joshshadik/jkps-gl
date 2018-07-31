@@ -100,6 +100,6 @@ void jkps::engine::ParticleSystem::update(double dt)
 void jkps::engine::ParticleSystem::render()
 {
 
-    _mesh->render(glm::mat4());
+    _mesh->render(_parent == nullptr ? glm::mat4() : _parent->worldMatrix() );
 }
 

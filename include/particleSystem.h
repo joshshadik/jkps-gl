@@ -2,6 +2,7 @@
 
 #include "framebuffer.h"
 #include "mesh.h"
+#include "transform.h"
 
 #include <array>
 
@@ -24,6 +25,8 @@ namespace jkps
             void magnitude(float magnitude) { _magnitude = magnitude; }
             void randomness(float randomness) { _randomness = randomness; }
             void size(float size) { _size = size; }
+
+            void setParent(Transform* transform) { _parent = transform; }
 
 		private:
 			int _currentCount;
@@ -62,6 +65,8 @@ namespace jkps
 			gl::Mesh* _mesh;
 			gl::Material* _renderMaterial;
             gl::Material* _updateMaterial;
+
+            Transform* _parent = nullptr;
 		};
 	}
 }

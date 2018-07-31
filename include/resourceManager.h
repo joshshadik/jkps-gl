@@ -14,7 +14,7 @@
 #ifdef CUSTOM_ALLOC
 
 #else
-#define FRAMEBUFFER_COUNT 8
+#define FRAMEBUFFER_COUNT 32
 #define GEOMETRY_COUNT 64
 #define MATERIAL_COUNT 64
 #define UBO_COUNT 64
@@ -22,7 +22,7 @@
 #define SHADER_COUNT 32
 #define SHADERPROGRAM_COUNT 16
 #define TEXTURE_COUNT 64
-#define STACK_BYTE_COUNT 8192
+#define STACK_BYTE_COUNT 16384
 #endif
 
 using namespace jkps::gl;
@@ -75,8 +75,6 @@ namespace jkps
             uint32_t _nextShaderProgram = 0;
             uint32_t _nextTexture = 0;
             uint32_t _nextUbo = 0;
-            uint32_t _nextTransform = 0;
-            uint32_t _nextNode = 0;
 
             uint32_t _nextStackByte = 0;
         };
