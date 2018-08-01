@@ -28,6 +28,8 @@ jkps::gl::Framebuffer::Framebuffer(NodeList<Texture*> color, Texture* depth, con
     {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth->id(), 0);
     }
+
+    _valid = true;
 }
 
 jkps::gl::Framebuffer::Framebuffer()
